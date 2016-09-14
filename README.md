@@ -146,7 +146,7 @@ void gnuvgResize(VGint pixel_width, VGint pixel_height); // Must be called to se
 
 ## gnuVG API extensions
 
-gnuVG comes with the affermentioned APIs for creating and managing gnuVG contexts. It also
+gnuVG comes with the aforementioned APIs for creating and managing gnuVG contexts. It also
 has some other API extensions:
 
 ```
