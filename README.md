@@ -27,36 +27,36 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 To successfully build gnuVG, the following is required:
 
-'''
+```
 GCC
 Autotools (autoconf, automake, libtool etc.)
 libfreetype (compiled and ready)
-'''
+```
 
 ## How to setup and compile
 
 If you have just cloned the GIT repository you must first bootstrap
 the build configuration scripts:
 
-'''
+```
 bootstrap.sh
-'''
+```
 
 After this you can run configure:
 
-'''
+```
 # just plainly
 ./configure
 
 # ---- OR - an example of cross compiling using the Android NDK ---
 CFLAGS=-O4 CXXFLAGS=-O4 ./configure --host=arm-linux
-'''
+```
 
 If configuration is OK, then you can compile and install:
 
-'''
+```
 make install
-'''
+```
 
 ## Supported APIs
 
@@ -137,19 +137,19 @@ gnuVG is only a partial implementation of the OpenVG API.
 gnuVG can be used in many ways like regular OpenVG, but with some caveats. A special gnuVG
 context must be created before you can call any of the API:s.
 
-'''
+```
 VGHandle gnuvgCreateContext();  // Creates a new gnuVG context, and returns a handle
 void gnuVGDestroyContext(VGHandle context); // Destroys a previously created context
 void gnuvgUseContext(VGHandle context); // Indicate to gnuVG which context to use
 void gnuvgResize(VGint pixel_width, VGint pixel_height); // Must be called to set the pixel size
-'''
+```
 
 ## gnuVG API extensions
 
 gnuVG comes with the affermentioned APIs for creating and managing gnuVG contexts. It also
 has some other API extensions:
 
-'''
+```
 
 // Load a font using libfreetype (currently hardcoded for Android...)
 VGFont gnuvgLoadFont(const char* family, gnuVGFontStyle fontStyle);
@@ -165,4 +165,4 @@ void gnuvgResetBoundingBox();
 // since last call to gnuvgResetBoundingBox();
 void gnuvgGetBoundingBox(VGfloat corner_coordinates[4]);
 
-'''
+```
