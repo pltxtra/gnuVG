@@ -8,7 +8,6 @@
 #
 #########
 
-autoheader
 libtoolize --automake --ltdl
 aclocal
 autoconf
