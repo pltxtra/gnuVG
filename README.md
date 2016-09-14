@@ -139,7 +139,7 @@ context must be created before you can call any of the API:s.
 
 ```
 VGHandle gnuvgCreateContext();  // Creates a new gnuVG context, and returns a handle
-void gnuVGDestroyContext(VGHandle context); // Destroys a previously created context
+void gnuvgDestroyContext(VGHandle context); // Destroys a previously created context
 void gnuvgUseContext(VGHandle context); // Indicate to gnuVG which context to use
 void gnuvgResize(VGint pixel_width, VGint pixel_height); // Must be called to set the pixel size
 ```
