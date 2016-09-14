@@ -1,0 +1,17 @@
+Makefile.in
+aclocal.m4
+autom4te.cache
+build
+config.guess
+config.sub
+configure
+depcomp
+install-sh
+libltdl
+ltmain.sh
+m4
+missing
+*akefile.in
+*~
+compile
+
