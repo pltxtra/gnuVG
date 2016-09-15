@@ -2,7 +2,7 @@ SUBDIRS = libtess2
 
 lib_LTLIBRARIES = libgnuVG.la
 
-libgnuVG_la_CPPFLAGS = -std=c++11 -I $(VPATH)/gnuVG -I $(VPATH)/libtess2/include -I ${prefix}/include/freetype2 -Wall -Werror -Wfatal-errors
+libgnuVG_la_CPPFLAGS = -std=c++11 -I $(srcdir)/gnuVG -I $(srcdir)/libtess2/include -I ${prefix}/include/freetype2 -Wall -Werror -Wfatal-errors
 
 libgnuVG_la_SOURCES = \
 gnuVG_profiler.cc \
