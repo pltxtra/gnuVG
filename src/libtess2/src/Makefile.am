@@ -1,6 +1,6 @@
 noinst_LTLIBRARIES = libtess2.la
 
-libtess2_la_CFLAGS = -I $(VPATH)/../include
+libtess2_la_CFLAGS = -I $(srcdir)/../include
 
 libtess2_la_SOURCES = \
 bucketalloc.c \
