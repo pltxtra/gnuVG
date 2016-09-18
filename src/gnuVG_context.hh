@@ -38,7 +38,7 @@
 
 namespace gnuVG {
 
-	class Context : public Object {
+	class Context {
 	public:
 		struct FrameBuffer {
 			GLuint framebuffer = 0, texture = 0;
@@ -153,7 +153,7 @@ namespace gnuVG {
 
 	public:
 		Context();
-		virtual ~Context();
+		~Context();
 
 		void set_error(VGErrorCode new_error);
 		VGErrorCode get_error();
@@ -235,19 +235,19 @@ namespace gnuVG {
 		// Map the point into the space described by the current matrix
 		Point map_point(const Point &p);
 
-		/* Inherited Object API */
-		virtual void vgSetParameterf(VGint paramType, VGfloat value);
-		virtual void vgSetParameteri(VGint paramType, VGint value);
-		virtual void vgSetParameterfv(VGint paramType, VGint count, const VGfloat *values);
-		virtual void vgSetParameteriv(VGint paramType, VGint count, const VGint *values);
+		/* OpenVG context setters/getters */
+		void vgSetf(VGint paramType, VGfloat value);
+		void vgSeti(VGint paramType, VGint value);
+		void vgSetfv(VGint paramType, VGint count, const VGfloat *values);
+		void vgSetiv(VGint paramType, VGint count, const VGint *values);
 
-		virtual VGfloat vgGetParameterf(VGint paramType);
-		virtual VGint vgGetParameteri(VGint paramType);
+		VGfloat vgGetf(VGint paramType);
+		VGint vgGeti(VGint paramType);
 
-		virtual VGint vgGetParameterVectorSize(VGint paramType);
+		VGint vgGetVectorSize(VGint paramType);
 
-		virtual void vgGetParameterfv(VGint paramType, VGint count, VGfloat *values);
-		virtual void vgGetParameteriv(VGint paramType, VGint count, VGint *values);
+		void vgGetfv(VGint paramType, VGint count, VGfloat *values);
+		void vgGetiv(VGint paramType, VGint count, VGint *values);
 
 		/* static interface */
 		static Context *get_current();

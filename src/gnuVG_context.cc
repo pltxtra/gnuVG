@@ -235,7 +235,7 @@ namespace gnuVG {
 	}
 
 	/* Inherited Object API */
-	void Context::vgSetParameterf(VGint paramType, VGfloat value) {
+	void Context::vgSetf(VGint paramType, VGfloat value) {
 		switch(paramType) {
 			/* For the following paramType values this call is illegal */
 		case VG_STROKE_DASH_PATTERN:
@@ -301,7 +301,7 @@ namespace gnuVG {
 		}
 	}
 
-	void Context::vgSetParameteri(VGint paramType, VGint value) {
+	void Context::vgSeti(VGint paramType, VGint value) {
 		switch(paramType) {
 			/* For the following paramType values this call is illegal */
 		default:
@@ -406,7 +406,7 @@ namespace gnuVG {
 		}
 	}
 
-	void Context::vgSetParameterfv(VGint paramType, VGint count, const VGfloat *values) {
+	void Context::vgSetfv(VGint paramType, VGint count, const VGfloat *values) {
 		switch(paramType) {
 		case VG_STROKE_DASH_PATTERN:
 		{
@@ -439,7 +439,7 @@ namespace gnuVG {
 		}
 	}
 
-	void Context::vgSetParameteriv(VGint paramType, VGint count, const VGint *values) {
+	void Context::vgSetiv(VGint paramType, VGint count, const VGint *values) {
 		switch(paramType) {
 			/* Scissoring rectangles */
 		case VG_SCISSOR_RECTS:
@@ -490,7 +490,7 @@ namespace gnuVG {
 		}
 	}
 
-	VGfloat Context::vgGetParameterf(VGint paramType) {
+	VGfloat Context::vgGetf(VGint paramType) {
 		switch(paramType) {
 			/* For the following paramType values this call is illegal */
 		case VG_STROKE_DASH_PATTERN:
@@ -568,7 +568,7 @@ namespace gnuVG {
 		return 0.0f;
 	}
 
-	VGint Context::vgGetParameteri(VGint paramType) {
+	VGint Context::vgGeti(VGint paramType) {
 		switch(paramType) {
 			/* For the following paramType values this call is illegal */
 		default:
@@ -665,7 +665,7 @@ namespace gnuVG {
 		return -1; // not implemented
 	}
 
-	VGint Context::vgGetParameterVectorSize(VGint paramType) {
+	VGint Context::vgGetVectorSize(VGint paramType) {
 		switch(paramType) {
 		case VG_MATRIX_MODE:
 		case VG_FILL_RULE:
@@ -719,7 +719,7 @@ namespace gnuVG {
 		return 0;
 	}
 
-	void Context::vgGetParameterfv(VGint paramType, VGint count, VGfloat *values) {
+	void Context::vgGetfv(VGint paramType, VGint count, VGfloat *values) {
 		switch(paramType) {
 		case VG_GLYPH_ORIGIN:
 			if(count == 2)
@@ -731,7 +731,7 @@ namespace gnuVG {
 		}
 	}
 
-	void Context::vgGetParameteriv(VGint paramType, VGint count, VGint *values) {
+	void Context::vgGetiv(VGint paramType, VGint count, VGint *values) {
 	}
 
 }
@@ -1362,41 +1362,41 @@ extern "C" {
 	}
 
 	void VG_API_ENTRY vgSetf (VGParamType type, VGfloat value) VG_API_EXIT {
-		gnuVG::Context::get_current()->vgSetParameterf((VGint)type, value);
+		gnuVG::Context::get_current()->vgSetf((VGint)type, value);
 	}
 
 	void VG_API_ENTRY vgSeti (VGParamType type, VGint value) VG_API_EXIT {
-		gnuVG::Context::get_current()->vgSetParameteri((VGint)type, value);
+		gnuVG::Context::get_current()->vgSeti((VGint)type, value);
 	}
 
 	void VG_API_ENTRY vgSetfv(VGParamType type, VGint count,
 				  const VGfloat * values) VG_API_EXIT {
-		gnuVG::Context::get_current()->vgSetParameterfv((VGint)type, count, values);
+		gnuVG::Context::get_current()->vgSetfv((VGint)type, count, values);
 	}
 
 	void VG_API_ENTRY vgSetiv(VGParamType type, VGint count,
 				  const VGint * values) VG_API_EXIT {
-		gnuVG::Context::get_current()->vgSetParameteriv((VGint)type, count, values);
+		gnuVG::Context::get_current()->vgSetiv((VGint)type, count, values);
 	}
 
 	VGfloat VG_API_ENTRY vgGetf(VGParamType type) VG_API_EXIT {
-		return gnuVG::Context::get_current()->vgGetParameterf((VGint)type);
+		return gnuVG::Context::get_current()->vgGetf((VGint)type);
 	}
 
 	VGint VG_API_ENTRY vgGeti(VGParamType type) VG_API_EXIT {
-		return gnuVG::Context::get_current()->vgGetParameteri((VGint)type);
+		return gnuVG::Context::get_current()->vgGeti((VGint)type);
 	}
 
 	VGint VG_API_ENTRY vgGetVectorSize(VGParamType type) VG_API_EXIT {
-		return gnuVG::Context::get_current()->vgGetParameterVectorSize((VGint)type);
+		return gnuVG::Context::get_current()->vgGetVectorSize((VGint)type);
 	}
 
 	void VG_API_ENTRY vgGetfv(VGParamType type, VGint count, VGfloat * values) VG_API_EXIT {
-		gnuVG::Context::get_current()->vgGetParameterfv((VGint)type, count, values);
+		gnuVG::Context::get_current()->vgGetfv((VGint)type, count, values);
 	}
 
 	void VG_API_ENTRY vgGetiv(VGParamType type, VGint count, VGint * values) VG_API_EXIT {
-		gnuVG::Context::get_current()->vgGetParameteriv((VGint)type, count, values);
+		gnuVG::Context::get_current()->vgGetiv((VGint)type, count, values);
 	}
 
 	void VG_API_ENTRY vgSetParameterf(VGHandle object,
