@@ -6,6 +6,7 @@ libgnuVG_la_CPPFLAGS = -std=c++11 -I $(srcdir)/gnuVG -I $(srcdir)/libtess2/inclu
 
 libgnuVG_la_SOURCES = \
 gnuVG_profiler.cc \
+gnuVG_error.cc gnuVG_error.hh \
 gnuVG_context.cc gnuVG_context.hh \
 gnuVG_debug.hh \
 gnuVG_shader.cc gnuVG_shader.hh \

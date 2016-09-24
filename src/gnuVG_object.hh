@@ -21,19 +21,42 @@
 #define __GNUVG_OBJECT_HH
 
 #include <VG/openvg.h>
+#include <memory>
+#include <typeinfo>
+
+#include "gnuVG_error.hh"
 
 namespace gnuVG {
 
-	class Object {
+	class Context;
+
+	class Object  : public std::enable_shared_from_this<Object> {
 	private:
-		unsigned int reference_counter = 0;
+		bool properly_created = false;
+		VGHandle obj_handle = VG_INVALID_HANDLE;
+
+		void reference();
+		static std::shared_ptr<Object> get_by_handle(VGHandle handle);
 
 	public:
-		virtual ~Object() {};
 
-		static void reference(Object* ptr);
-		static void dereference(Object* ptr);
+		class ObjectImproperlyCreated : public std::runtime_error {
+		public:
+			ObjectImproperlyCreated()
+				: runtime_error("gnuVG Object not created with Object::create().")
+				{}
+			virtual ~ObjectImproperlyCreated() {}
+		};
 
+		Object();
+		virtual ~Object();
+
+		inline VGHandle get_handle() {
+			if(!properly_created) {
+				throw ObjectImproperlyCreated();
+			}
+			return obj_handle;
+		}
 		virtual void vgSetParameterf(VGint paramType, VGfloat value) = 0;
 		virtual void vgSetParameteri(VGint paramType, VGint value) = 0;
 		virtual void vgSetParameterfv(VGint paramType, VGint count, const VGfloat *values) = 0;
@@ -46,6 +69,21 @@ namespace gnuVG {
 
 		virtual void vgGetParameterfv(VGint paramType, VGint count, VGfloat *values) = 0;
 		virtual void vgGetParameteriv(VGint paramType, VGint count, VGint *values) = 0;
+
+		static void dereference(VGHandle handle);
+
+		template<typename T>
+		static std::shared_ptr<T> get(VGHandle handle) {
+			auto obj = std::static_pointer_cast<T>(get_by_handle(handle));
+			return obj;
+		}
+
+		template<class T, class ... Args>
+		static std::shared_ptr<T> create(Args && ... args) {
+			std::shared_ptr<T> ptr = std::make_shared<T>(args...);
+			ptr->reference();
+			return ptr;
+		}
 	};
 }
 

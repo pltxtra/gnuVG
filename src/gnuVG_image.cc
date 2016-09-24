@@ -165,46 +165,34 @@ extern "C" {
 					   VGbitfield allowedQuality) VG_API_EXIT {
 		auto ctx = Context::get_current();
 		if(ctx) {
-			Image* image = nullptr;
 			try {
-				image = new Image(ctx, format, width, height, allowedQuality);
+				auto image =
+					Object::create<Image>(ctx, format, width, height, allowedQuality);
+				return (VGImage)image->get_handle();
 			} catch(Image::FailedToCreateImageException e) {
 				GNUVG_ERROR("vgCreateImage() - Failed to prepare framebuffer.\n");
-				image = VG_INVALID_HANDLE;
 			}
-			return (VGImage)image;
-		}
-
-		GNUVG_ERROR("vgCreateImage() - No valid context available.\n");
+		} else
+			GNUVG_ERROR("vgCreateImage() - No valid context available.\n");
 
 		return VG_INVALID_HANDLE;
 	}
 
 	void VG_API_ENTRY vgDestroyImage(VGImage image) VG_API_EXIT {
-		if(image != VG_INVALID_HANDLE) {
-			Image* i = (Image*)image;
-			Object::dereference(i);
-		} else {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
+		Object::dereference(image);
 	}
 
 	void VG_API_ENTRY gnuVG_render_to_image(VGImage image) VG_API_EXIT {
-		if(image != VG_INVALID_HANDLE) {
-			Image* i = (Image*)image;
+		auto i = Object::get<Image>(image);
+		if(i)
 			Context::get_current()->render_to_framebuffer(i->get_framebuffer());
-		} else
-			Context::get_current()->render_to_framebuffer(nullptr);
 	}
 
 	void VG_API_ENTRY vgClearImage(VGImage image,
 				       VGint x, VGint y, VGint width, VGint height) VG_API_EXIT {
-		Image* i = (Image*)image;
-		if(i) {
+		auto i = Object::get<Image>(image);
+		if(i)
 			i->vgClearImage(x, y, width, height);
-		} else {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
 	}
 
 	void VG_API_ENTRY vgImageSubData(VGImage image,

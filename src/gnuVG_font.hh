@@ -45,18 +45,18 @@ namespace gnuVG {
 		class Glyph {
 		public:
 			bool isHinted = false;
-			Path* path = VG_INVALID_HANDLE;
-			Image* image = VG_INVALID_HANDLE;
+			std::shared_ptr<Path> path;
+			std::shared_ptr<Image> image;
 			VGfloat origin[2], escapement[2];
 
 			Glyph();
 			~Glyph();
 
 			void clear();
-			void set_path(Path* _path,
+			void set_path(std::shared_ptr<Path> _path,
 				      VGboolean _isHinted,
 				      const VGfloat _origin[2], const VGfloat _escapement[2]);
-			void set_image(Image* _image,
+			void set_image(std::shared_ptr<Image> _image,
 				       const VGfloat _origin[2], const VGfloat _escapement[2]);
 		};
 
@@ -90,12 +90,12 @@ namespace gnuVG {
 		virtual void vgGetParameteriv(VGint paramType, VGint count, VGint *values);
 
 		void vgSetGlyphToPath(VGuint glyphIndex,
-				      Path* path,
+				      std::shared_ptr<Path> path,
 				      VGboolean isHinted,
 				      const VGfloat glyphOrigin[2],
 				      const VGfloat escapement[2]);
 		void vgSetGlyphToImage(VGuint glyphIndex,
-				       Image* image,
+				       std::shared_ptr<Image> image,
 				       const VGfloat glyphOrigin[2],
 				       const VGfloat escapement[2]);
 		void vgClearGlyph(VGuint glyphIndex);

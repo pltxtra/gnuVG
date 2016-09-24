@@ -37,7 +37,6 @@
 #define GNUVG_MAX_SCISSORS 32
 
 namespace gnuVG {
-
 	class Context {
 	public:
 		struct FrameBuffer {
@@ -81,6 +80,8 @@ namespace gnuVG {
 		};
 
 	protected:
+		std::map<VGuint, std::shared_ptr<Object>> objects;
+
 		gnuVGPipeline active_pipeline;
 		VGPaintMode pipeline_mode;
 
@@ -121,8 +122,8 @@ namespace gnuVG {
 		/* Paint info */
 		Color clear_color;
 
-		Paint default_fill_paint, default_stroke_paint;
-		Paint *fill_paint, *stroke_paint;
+		std::shared_ptr<Paint>  default_fill_paint, default_stroke_paint,
+			fill_paint, stroke_paint;
 
 		void matrix_resize(VGint pixel_width, VGint pixel_height);
 
@@ -154,6 +155,10 @@ namespace gnuVG {
 	public:
 		Context();
 		~Context();
+
+		void register_object(std::shared_ptr<Object> object);
+		void forget_object(VGHandle o_handle);
+		std::shared_ptr<Object> get_object(VGHandle o_handle);
 
 		void set_error(VGErrorCode new_error);
 		VGErrorCode get_error();
@@ -215,8 +220,8 @@ namespace gnuVG {
 		void vgFinish();
 
 		/* OpenVG equivalent API - Paint Manipulation */
-		void vgSetPaint(Paint *p, VGbitfield paintModes);
-		Paint *vgGetPaint(VGbitfield paintModes);
+		void vgSetPaint(std::shared_ptr<Paint> p, VGbitfield paintModes);
+		std::shared_ptr<Paint> vgGetPaint(VGbitfield paintModes);
 
 		/* OpenVG equivalent API - Matrix Manipulation */
 		void vgLoadIdentity(void);

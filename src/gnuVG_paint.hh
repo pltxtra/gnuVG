@@ -62,9 +62,7 @@ namespace gnuVG {
 
 		// pattern image
 		VGTilingMode tiling_mode = VG_TILE_FILL;
-		Image* pattern;
-
-		virtual ~Paint();
+		std::shared_ptr<Image> pattern;
 
 		/* OpenVG equivalent API - Paint Manipulation */
 		void vgSetColor(VGuint rgba);
@@ -84,7 +82,7 @@ namespace gnuVG {
 		virtual void vgGetParameterfv(VGint paramType, VGint count, VGfloat *values);
 		virtual void vgGetParameteriv(VGint paramType, VGint count, VGint *values);
 
-		virtual void vgPaintPattern(Image* pattern);
+		virtual void vgPaintPattern(std::shared_ptr<Image> pattern);
 	};
 }
 

@@ -103,52 +103,39 @@ extern "C" {
 	VGMaskLayer VG_API_ENTRY vgCreateMaskLayer(VGint width, VGint height) VG_API_EXIT {
 		auto ctx = Context::get_current();
 		if(ctx) {
-			MaskLayer* mskl = nullptr;
 			try {
-				mskl = new MaskLayer(ctx, width, height);
+				auto mskl =
+					Object::create<MaskLayer>(ctx, width, height);
+				return (VGMaskLayer)mskl->get_handle();
 			} catch(MaskLayer::FailedToCreateMaskLayerException e) {
 				GNUVG_ERROR("vgCreateMaskLayer() - Failed to prepare framebuffer.\n");
-				mskl = VG_INVALID_HANDLE;
 			}
-			return (VGMaskLayer)mskl;
-		}
-
-		GNUVG_ERROR("vgCreateMaskLayer() - No valid context available.\n");
+		} else
+			GNUVG_ERROR("vgCreateMaskLayer() - No valid context available.\n");
 
 		return VG_INVALID_HANDLE;
 	}
 
 	void VG_API_ENTRY vgDestroyMaskLayer(VGMaskLayer mskl) VG_API_EXIT {
-		if(mskl != VG_INVALID_HANDLE) {
-			MaskLayer* ml = (MaskLayer*)mskl;
-			Object::dereference(ml);
-		} else {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
+		Object::dereference(mskl);
 	}
 
 	void VG_API_ENTRY vgFillMaskLayer(VGMaskLayer mskl,
 					  VGint x, VGint y,
 					  VGint width, VGint height,
 					  VGfloat value) VG_API_EXIT {
-		MaskLayer* ml = (MaskLayer*)mskl;
-		if(ml) {
+		auto ml = Object::get<MaskLayer>(mskl);
+		if(ml)
 			ml->vgFillMaskLayer(x, y, width, height, value);
-		} else {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
 	}
 
 	void VG_API_ENTRY vgCopyMask(VGMaskLayer mskl,
 				     VGint dx, VGint dy,
 				     VGint sx, VGint sy,
 				     VGint width, VGint height) VG_API_EXIT {
-		MaskLayer* ml = (MaskLayer*)mskl;
-		if(ml) {
+		auto ml = Object::get<MaskLayer>(mskl);
+		if(ml)
 			ml->vgCopyMask(dx, dy, sx, sy, width, height);
-		} else {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
 	}
 
 	static void render_helper(Context* ctx,

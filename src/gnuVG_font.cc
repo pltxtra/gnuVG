@@ -28,11 +28,10 @@
 
 namespace gnuVG {
 
-	void Font::Glyph::set_path(Path* _path,
+	void Font::Glyph::set_path(std::shared_ptr<Path> _path,
 				   VGboolean _isHinted,
 				   const VGfloat _origin[2], const VGfloat _escapement[2]) {
 		clear();
-		Object::reference(_path);
 		path = _path;
 		isHinted = _isHinted;
 		for(int k = 0; k < 2; ++k) {
@@ -41,10 +40,9 @@ namespace gnuVG {
 		}
 	}
 
-	void Font::Glyph::set_image(Image* _image,
+	void Font::Glyph::set_image(std::shared_ptr<Image> _image,
 				    const VGfloat _origin[2], const VGfloat _escapement[2]) {
 		clear();
-		Object::reference(_image);
 		image = _image;
 
 		for(int k = 0; k < 2; ++k) {
@@ -54,12 +52,8 @@ namespace gnuVG {
 	}
 
 	void Font::Glyph::clear() {
-		if(path != VG_INVALID_HANDLE)
-			Object::dereference(path);
-		if(image != VG_INVALID_HANDLE)
-			Object::dereference(image);
-		path = VG_INVALID_HANDLE;
-		image = VG_INVALID_HANDLE;
+		path.reset();
+		image.reset();
 		origin[0] = 0.0f;
 		origin[1] = 0.0f;
 		escapement[0] = 0.0f;
@@ -110,7 +104,8 @@ namespace gnuVG {
 			break;
 		}
 
-		if(fontLoader_load_font((VGFont)this, &freetype_face, path.c_str(), VG_FALSE) != (VGFont)this)
+		if(get_handle() !=
+		   fontLoader_load_font(get_handle(), &freetype_face, path.c_str(), VG_FALSE))
 			return false;
 		freetype_face_set = true;
 		return true;
@@ -250,7 +245,7 @@ namespace gnuVG {
 
 
 	void Font::vgSetGlyphToPath(VGuint glyphIndex,
-				    Path* path,
+				    std::shared_ptr<Path> path,
 				    VGboolean isHinted,
 				    const VGfloat glyphOrigin[2],
 				    const VGfloat escapement[2]) {
@@ -259,7 +254,7 @@ namespace gnuVG {
 	}
 
 	void Font::vgSetGlyphToImage(VGuint glyphIndex,
-				     Image* image,
+				     std::shared_ptr<Image> image,
 				     const VGfloat glyphOrigin[2],
 				     const VGfloat escapement[2]) {
 		secure_max_glyphIndex(glyphIndex);
@@ -354,9 +349,9 @@ extern "C" {
 					  gnuVGFontStyle fontStyle) {
 		VGFont font = vgCreateFont(256);
 		if(font != VG_INVALID_HANDLE) {
-			Font* f = (Font*)font;
+			auto f = Object::get<Font>(font);
 			if(!(f->gnuVG_load_font(family, fontStyle))) {
-				delete f;
+				Object::dereference(font);
 				font = VG_INVALID_HANDLE;
 				Context::get_current()->set_error(VG_ILLEGAL_ARGUMENT_ERROR);
 			}
@@ -369,12 +364,9 @@ extern "C" {
 	void VG_API_ENTRY gnuvgRenderText(
 		VGFont font, VGfloat size, gnuVGTextAnchor anchor,
 		const char* utf8, VGfloat x_anchor, VGfloat y_anchor) {
-		if(font != VG_INVALID_HANDLE) {
-			Font* f = (Font*)font;
+		auto f = Object::get<Font>(font);
+		if(f)
 			f->gnuVG_render_text(size, anchor, utf8, x_anchor, y_anchor);
-		} else {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
 	}
 
 	/*********************
@@ -386,17 +378,16 @@ extern "C" {
 	VGFont VG_API_ENTRY vgCreateFont(VGint glyphCapacityHint) VG_API_EXIT {
 		prepare_fontloader();
 
-		Font* font = new Font(glyphCapacityHint);
-		return (VGFont)font;
+		auto font = Object::create<Font>(glyphCapacityHint);
+
+		if(font)
+			return (VGFont)font->get_handle();
+
+		return (VGFont)VG_INVALID_HANDLE;
 	}
 
 	void VG_API_ENTRY vgDestroyFont(VGFont font) VG_API_EXIT {
-		if(font != VG_INVALID_HANDLE) {
-			Font* f = (Font*)font;
-			Object::dereference(f);
-		} else {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
+		Object::dereference(font);
 	}
 
 	void VG_API_ENTRY vgSetGlyphToPath(VGFont font,
@@ -405,13 +396,10 @@ extern "C" {
 					   VGboolean isHinted,
 					   const VGfloat glyphOrigin [2],
 					   const VGfloat escapement[2]) VG_API_EXIT {
-		if(font != VG_INVALID_HANDLE && path != VG_INVALID_HANDLE) {
-			Font* f = (Font*)font;
-			Path* p = (Path*)path;
+		auto f = Object::get<Font>(font);
+		auto p = Object::get<Path>(path);
+		if(f && p)
 			f->vgSetGlyphToPath(glyphIndex, p, isHinted, glyphOrigin, escapement);
-		} else {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
 	}
 
 	void VG_API_ENTRY vgSetGlyphToImage(VGFont font,
@@ -419,34 +407,25 @@ extern "C" {
 					    VGImage image,
 					    const VGfloat glyphOrigin [2],
 					    const VGfloat escapement[2]) VG_API_EXIT {
-		if(font != VG_INVALID_HANDLE && image != VG_INVALID_HANDLE) {
-			Font* f = (Font*)font;
-			Image* i = (Image*)image;
+		auto f = Object::get<Font>(font);
+		auto i = Object::get<Image>(image);
+		if(f && i)
 			f->vgSetGlyphToImage(glyphIndex, i, glyphOrigin, escapement);
-		} else {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
 	}
 
 	void VG_API_ENTRY vgClearGlyph(VGFont font,VGuint glyphIndex) VG_API_EXIT {
-		if(font != VG_INVALID_HANDLE) {
-			Font* f = (Font*)font;
+		auto f = Object::get<Font>(font);
+		if(f)
 			f->vgClearGlyph(glyphIndex);
-		} else {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
 	}
 
 	void VG_API_ENTRY vgDrawGlyph(VGFont font,
 				      VGuint glyphIndex,
 				      VGbitfield paintModes,
 				      VGboolean allowAutoHinting) VG_API_EXIT {
-		if(font != VG_INVALID_HANDLE) {
-			Font* f = (Font*)font;
+		auto f = Object::get<Font>(font);
+		if(f)
 			f->vgDrawGlyph(glyphIndex, paintModes, allowAutoHinting);
-		} else {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
 	}
 
 	void VG_API_ENTRY vgDrawGlyphs(VGFont font,
@@ -456,13 +435,10 @@ extern "C" {
 				       const VGfloat *adjustments_y,
 				       VGbitfield paintModes,
 				       VGboolean allowAutoHinting) VG_API_EXIT {
-		if(font != VG_INVALID_HANDLE) {
-			Font* f = (Font*)font;
+		auto f = Object::get<Font>(font);
+		if(f)
 			f->vgDrawGlyphs(glyphCount, glyphIndices,
 					adjustments_x, adjustments_y,
 					paintModes, allowAutoHinting);
-		} else {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
 	}
 }

@@ -84,7 +84,7 @@ namespace gnuVG {
 		void vgRemovePathCapabilities(VGbitfield capabilities);
 		VGbitfield vgGetPathCapabilities();
 
-		void vgAppendPath(Path *srcPath);
+		void vgAppendPath(std::shared_ptr<Path> srcPath);
 
 		template<typename T>
 		void vgAppendPathData(VGint numSegments,
@@ -208,8 +208,9 @@ namespace gnuVG {
 		}
 
 		void vgModifyPathCoords(VGint startIndex, VGint numSegments, const void *pathData);
-		void vgTransformPath(Path *srcPath);
-		VGboolean vgInterpolatePath(Path *startPath, Path *endPath, VGfloat amount);
+		void vgTransformPath(std::shared_ptr<Path> srcPath);
+		VGboolean vgInterpolatePath(std::shared_ptr<Path> startPath,
+					    std::shared_ptr<Path> endPath, VGfloat amount);
 		VGfloat vgPathLength(VGint startSegment, VGint numSegments);
 		void vgPointAlongPath(VGint startSegment, VGint numSegments,
 				      VGfloat distance,

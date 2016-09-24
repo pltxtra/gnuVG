@@ -19,6 +19,7 @@
 
 
 #include "gnuVG_fontloader.hh"
+#include "gnuVG_font.hh"
 
 //#define __DO_GNUVG_DEBUG
 #include "gnuVG_debug.hh"

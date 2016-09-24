@@ -27,11 +27,6 @@
 
 namespace gnuVG {
 
-	Paint::~Paint() {
-		if(pattern)
-			Object::dereference(pattern);
-	}
-
 	void Paint::vgSetColor(VGuint rgba) {
 		color.r = ((rgba >> 24) & 0xff)/255.0f;
 		color.g = ((rgba >> 16) & 0xff)/255.0f;
@@ -343,13 +338,7 @@ namespace gnuVG {
 			values[0] = vgGetParameteri(paramType);
 	}
 
-	void Paint::vgPaintPattern(Image* image) {
-		if(image)
-			Object::reference(image);
-
-		if(pattern)
-			Object::dereference(pattern);
-
+	void Paint::vgPaintPattern(std::shared_ptr<Image> image) {
 		pattern = image;
 	}
 }
@@ -358,61 +347,42 @@ using namespace gnuVG;
 
 extern "C" {
 	VGPaint VG_API_ENTRY vgCreatePaint(void) VG_API_EXIT {
-		Paint *paint = new Paint();
-		if(paint) return (VGPaint)paint;
+		auto paint = Object::create<Paint>();
+		if(paint) return (VGPaint)paint->get_handle();
 
 		return VG_INVALID_HANDLE;
 	}
 
 	void VG_API_ENTRY vgDestroyPaint(VGPaint paint) VG_API_EXIT {
-		if(paint) {
-			Paint *p = (Paint *)paint;
-			delete p;
-		}
+		Object::dereference(paint);
 	}
 
 	void VG_API_ENTRY vgSetPaint(VGPaint paint, VGbitfield paintModes) VG_API_EXIT {
-		if(paint != VG_INVALID_HANDLE) {
-			Paint *p = (Paint *)paint;
-			Context::get_current()->vgSetPaint(p, paintModes);
-		} else {
-			Context::get_current()->vgSetPaint(NULL, paintModes);
-		}
+		auto p = Object::get<Paint>(paint);
+		Context::get_current()->vgSetPaint(p, paintModes);
 	}
 
 	VGPaint VG_API_ENTRY vgGetPaint(VGPaintMode paintMode) VG_API_EXIT {
-		Paint *p = Context::get_current()->vgGetPaint(paintMode);
-		if(p == NULL) return VG_INVALID_HANDLE;
-		return (VGPaint)p;
+		auto p = Context::get_current()->vgGetPaint(paintMode);
+		return p ? (VGPaint)p->get_handle() : VG_INVALID_HANDLE;
 	}
 
 	void VG_API_ENTRY vgSetColor(VGPaint paint, VGuint rgba) VG_API_EXIT {
-		Paint *p = (Paint *)paint;
-		if(p) {
+		auto p = Object::get<Paint>(paint);
+		if(p)
 			p->vgSetColor(rgba);
-		} else {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
 	}
 
 	VGuint VG_API_ENTRY vgGetColor(VGPaint paint) VG_API_EXIT {
-		Paint *p = (Paint *)paint;
-		if(p) {
-			return p->vgGetColor();
-		} else {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
-		return 0;
+		auto p = Object::get<Paint>(paint);
+		return p ? p->vgGetColor() : 0;
 	}
 
 	void VG_API_ENTRY vgPaintPattern(VGPaint paint, VGImage pattern) VG_API_EXIT {
-		Paint* p = (Paint*)paint;
-		Image* i = (Image*)pattern;
+		auto p = Object::get<Paint>(paint);
+		auto i = Object::get<Image>(pattern);
 
-		if(p) {
+		if(p && i)
 			p->vgPaintPattern(i);
-		} else {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
 	}
 }

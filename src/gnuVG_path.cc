@@ -25,8 +25,6 @@
 #define ENABLE_GNUVG_PROFILER
 #include <VG/gnuVG_profiler.hh>
 
-#include <cxxabi.h>
-
 #define TESS_POLY_SIZE 3
 
 namespace gnuVG {
@@ -164,7 +162,7 @@ namespace gnuVG {
 	}
 
 
-	void Path::vgAppendPath(Path *srcPath) {
+	void Path::vgAppendPath(std::shared_ptr<Path> srcPath) {
 		path_dirty = true;
 		/* XXX not implemented */
 	}
@@ -174,12 +172,13 @@ namespace gnuVG {
 		/* XXX not implemented */
 	}
 
-	void Path::vgTransformPath(Path *srcPath) {
+	void Path::vgTransformPath(std::shared_ptr<Path> srcPath) {
 		path_dirty = true;
 		/* XXX not implemented */
 	}
 
-	VGboolean Path::vgInterpolatePath(Path *startPath, Path *endPath, VGfloat amount) {
+	VGboolean Path::vgInterpolatePath(std::shared_ptr<Path> startPath,
+					  std::shared_ptr<Path> endPath, VGfloat amount) {
 		path_dirty = true;
 		/* XXX not implemented */
 		return VG_FALSE;
@@ -323,28 +322,23 @@ extern "C" {
 					 VGfloat scale, VGfloat bias,
 					 VGint segmentCapacityHint, VGint coordCapacityHint,
 					 VGbitfield capabilities ) VG_API_EXIT {
-		Path *path = new Path(datatype, scale, bias, capabilities);
-		if(path) return (VGPath)path;
+		auto path =
+			Object::create<Path>(datatype, scale, bias, capabilities);
+
+		if(path)
+			return (VGPath)path->get_handle();
 
 		return VG_INVALID_HANDLE;
 	}
 
 	void VG_API_ENTRY vgDestroyPath(VGPath path) VG_API_EXIT {
-		if(path) {
-			Path *p = (Path *)path;
-			Object::dereference(p);
-		}
+		Object::dereference(path);
 	}
 
 	void VG_API_ENTRY vgClearPath(VGPath path, VGbitfield capabilities) VG_API_EXIT {
-		if (path == VG_INVALID_HANDLE) {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-			return;
-		}
-
-		Path *p = (Path *)path;
-
-		p->vgClearPath(capabilities);
+		auto p = Object::get<Path>(path);
+		if(p)
+			p->vgClearPath(capabilities);
 	}
 
 	void VG_API_ENTRY vgRemovePathCapabilities(VGPath path,
@@ -352,40 +346,25 @@ extern "C" {
 	}
 
 	VGbitfield VG_API_ENTRY vgGetPathCapabilities(VGPath path) VG_API_EXIT {
-		if (path == VG_INVALID_HANDLE) {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-			return 0;
-		}
-
-		Path *p = (Path *)path;
-
-		return p->vgGetPathCapabilities();
+		auto p = Object::get<Path>(path);
+		if(p)
+			return p->vgGetPathCapabilities();
+		return 0;
 	}
 
 	void VG_API_ENTRY vgAppendPath(VGPath dstPath, VGPath srcPath) VG_API_EXIT {
-		if (srcPath == VG_INVALID_HANDLE) {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-			return;
-		}
-		if (dstPath == VG_INVALID_HANDLE) {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-			return;
-		}
+		auto sp = Object::get<Path>(srcPath);
+		auto dp = Object::get<Path>(dstPath);
 
-		Path *sp = (Path *)srcPath;
-		Path *dp = (Path *)dstPath;
-
-		dp->vgAppendPath(sp);
+		if(sp && dp)
+			dp->vgAppendPath(sp);
 	}
 
 	void VG_API_ENTRY vgAppendPathData(VGPath path, VGint numSegments,
 					   const VGubyte *pathSegments, const void *pathData) VG_API_EXIT {
-		if (path == VG_INVALID_HANDLE) {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
+		auto p = Object::get<Path>(path);
+		if(!p)
 			return;
-		}
-
-		Path *p = (Path *)path;
 
 		switch(p->get_dataType()) {
 		case VG_PATH_DATATYPE_FORCE_SIZE:
@@ -411,52 +390,31 @@ extern "C" {
 	}
 
 	void VG_API_ENTRY vgTransformPath(VGPath dstPath, VGPath srcPath) VG_API_EXIT {
-		if (dstPath == VG_INVALID_HANDLE) {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-			return;
-		}
-		if (srcPath == VG_INVALID_HANDLE) {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-			return;
-		}
-
-		Path *dp = (Path *)dstPath;
-		Path *sp = (Path *)srcPath;
-
-		dp->vgTransformPath(sp);
+		auto sp = Object::get<Path>(srcPath);
+		auto dp = Object::get<Path>(dstPath);
+		if(dp && sp)
+			dp->vgTransformPath(sp);
 	}
 
 	VGboolean VG_API_ENTRY vgInterpolatePath(VGPath dstPath,
 						 VGPath startPath,
 						 VGPath endPath,
 						 VGfloat amount) VG_API_EXIT {
-		if (dstPath == VG_INVALID_HANDLE) {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-			return VG_FALSE;
-		}
-		if (startPath == VG_INVALID_HANDLE) {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-			return VG_FALSE;
-		}
-		if (endPath == VG_INVALID_HANDLE) {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-			return VG_FALSE;
-		}
+		auto sp = Object::get<Path>(startPath);
+		auto dp = Object::get<Path>(dstPath);
+		auto ep = Object::get<Path>(endPath);
 
-		Path *dp = (Path *)dstPath;
-		Path *sp = (Path *)startPath;
-		Path *ep = (Path *)endPath;
+		if(sp && ep && dp)
+			return dp->vgInterpolatePath(sp, ep, amount);
 
-		return dp->vgInterpolatePath(sp, ep, amount);
+		return VG_FALSE;
 	}
 
 	VGfloat VG_API_ENTRY vgPathLength(VGPath path,
 					  VGint startSegment, VGint numSegments) VG_API_EXIT {
-		if (path == VG_INVALID_HANDLE) {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
+		auto p = Object::get<Path>(path);
+		if(!p)
 			return 0.0f;
-		}
-		Path *p = (Path *)path;
 		return p->vgPathLength(startSegment, numSegments);
 	}
 
@@ -465,25 +423,19 @@ extern "C" {
 					   VGfloat distance,
 					   VGfloat * x, VGfloat * y,
 					   VGfloat * tangentX, VGfloat * tangentY) VG_API_EXIT {
-		if (path == VG_INVALID_HANDLE) {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
+		auto p = Object::get<Path>(path);
+		if(!p)
 			return;
-		}
-		Path *p = (Path *)path;
-		return p->vgPointAlongPath(startSegment, numSegments, distance,
-					   x, y, tangentX, tangentY);
+		p->vgPointAlongPath(startSegment, numSegments, distance,
+				    x, y, tangentX, tangentY);
 	}
 
 	void VG_API_ENTRY vgPathBounds(VGPath path,
 				       VGfloat *minX, VGfloat *minY,
 				       VGfloat *width, VGfloat *height) VG_API_EXIT {
-		if (path == VG_INVALID_HANDLE) {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
+		auto p = Object::get<Path>(path);
+		if(!p)
 			return;
-		}
-
-		Path *p = (Path *)path;
-
 		p->vgPathBounds(minX, minY, width, height);
 	}
 
@@ -491,28 +443,22 @@ extern "C" {
 		VGPath path,
 		VGfloat * minX, VGfloat * minY,
 		VGfloat * width, VGfloat * height) VG_API_EXIT {
-		if (path == VG_INVALID_HANDLE) {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
+		auto p = Object::get<Path>(path);
+		if(!p)
 			return;
-		}
-
-		Path *p = (Path *)path;
-
 		p->vgPathTransformedBounds(minX, minY, width, height);
 	}
 
 	void VG_API_ENTRY vgDrawPath(VGPath path, VGbitfield paintModes) VG_API_EXIT {
-		if(path == VG_INVALID_HANDLE) {
-			Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
+		auto p = Object::get<Path>(path);
+		if(!p)
 			return;
-		}
 		if(!(paintModes & (VG_FILL_PATH | VG_STROKE_PATH)))
 			return;
 
-		Context::get_current()->select_conversion_matrix(Context::GNUVG_MATRIX_PATH_USER_TO_SURFACE);
-		Context::get_current()->reset_pre_translation();
-
-		Path *p = (Path *)path;
+		auto ctx = Context::get_current();
+		ctx->select_conversion_matrix(Context::GNUVG_MATRIX_PATH_USER_TO_SURFACE);
+		ctx->reset_pre_translation();
 
 //		try {
 		p->vgDrawPath(paintModes);

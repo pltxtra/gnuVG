@@ -43,8 +43,10 @@ namespace gnuVG {
 		, join_style(VG_JOIN_MITER)
 		, current_framebuffer(&screen_buffer)
 	{
-		fill_paint = &default_fill_paint;
-		stroke_paint = &default_stroke_paint;
+		default_fill_paint = Object::create<Paint>();
+		default_stroke_paint = Object::create<Paint>();
+		fill_paint = default_fill_paint;
+		stroke_paint = default_stroke_paint;
 	}
 
 	Context::~Context() {}
@@ -112,12 +114,12 @@ namespace gnuVG {
 	}
 
 	/* OpenVG equivalent API - Paint Manipulation */
-	void Context::vgSetPaint(Paint *p, VGbitfield paintModes) {
-		if(p == NULL) {
+	void Context::vgSetPaint(std::shared_ptr<Paint> p, VGbitfield paintModes) {
+		if(!p) {
 			if(paintModes & VG_FILL_PATH)
-				fill_paint = &default_fill_paint;
+				fill_paint = default_fill_paint;
 			if(paintModes & VG_STROKE_PATH)
-				stroke_paint = &default_stroke_paint;
+				stroke_paint = default_stroke_paint;
 		} else {
 			if(paintModes & VG_FILL_PATH) {
 				fill_paint = p;
@@ -128,7 +130,8 @@ namespace gnuVG {
 		}
 	}
 
-	Paint *Context::vgGetPaint(VGbitfield paintModes) {
+	std::shared_ptr<Paint> Context::vgGetPaint(VGbitfield paintModes) {
+		std::shared_ptr<Paint> novalue;
 		if(
 			!(
 				paintModes == VG_FILL_PATH
@@ -139,16 +142,16 @@ namespace gnuVG {
 
 			){
 			set_error(VG_ILLEGAL_ARGUMENT_ERROR);
-			return VG_INVALID_HANDLE;
+			return novalue;
 		}
 		if(paintModes == VG_FILL_PATH) {
-			return fill_paint == &default_fill_paint ? NULL : fill_paint;
+			return fill_paint == default_fill_paint ? novalue : fill_paint;
 		}
 		if(paintModes == VG_STROKE_PATH) {
-			return stroke_paint == &default_stroke_paint ? NULL : stroke_paint;
+			return stroke_paint == default_stroke_paint ? novalue : stroke_paint;
 		}
 
-		return VG_INVALID_HANDLE;
+		return novalue;
 	}
 
 	/* OpenVG equivalent API - Matrix Manipulation */
@@ -1402,101 +1405,74 @@ extern "C" {
 	void VG_API_ENTRY vgSetParameterf(VGHandle object,
 					  VGint paramType,
 					  VGfloat value) VG_API_EXIT {
-		if(object != VG_INVALID_HANDLE) {
-			Object *o = (Object *)object;
+		auto o = Object::get<Object>(object);
+		if(object)
 			o->vgSetParameterf(paramType, value);
-		} else {
-			gnuVG::Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
 	}
 
 	void VG_API_ENTRY vgSetParameteri(VGHandle object,
 					  VGint paramType,
 					  VGint value) VG_API_EXIT {
-		if(object != VG_INVALID_HANDLE) {
-			Object *o = (Object *)object;
+		auto o = Object::get<Object>(object);
+		if(object)
 			o->vgSetParameteri(paramType, value);
-		} else {
-			gnuVG::Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
 	}
 
 	void VG_API_ENTRY vgSetParameterfv(VGHandle object,
 					   VGint paramType,
 					   VGint count, const VGfloat * values) VG_API_EXIT {
-		if(object != VG_INVALID_HANDLE) {
-			Object *o = (Object *)object;
+		auto o = Object::get<Object>(object);
+		if(object)
 			o->vgSetParameterfv(paramType, count, values);
-		} else {
-			gnuVG::Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
 	}
 
 	void VG_API_ENTRY vgSetParameteriv(VGHandle object,
 					   VGint paramType,
 					   VGint count, const VGint * values) VG_API_EXIT {
-		if(object != VG_INVALID_HANDLE) {
-			Object *o = (Object *)object;
+		auto o = Object::get<Object>(object);
+		if(object)
 			o->vgSetParameteriv(paramType, count, values);
-		} else {
-			gnuVG::Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
-		}
 	}
 
 
 	VGfloat VG_API_ENTRY vgGetParameterf(VGHandle object,
 					     VGint paramType) VG_API_EXIT {
-		if(object != VG_INVALID_HANDLE) {
-			Object *o = (Object *)object;
+		auto o = Object::get<Object>(object);
+		if(object)
 			return o->vgGetParameteri(paramType);
-		}
-
-		gnuVG::Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
 		return 0;
 	}
 
 	VGint VG_API_ENTRY vgGetParameteri(VGHandle object,
 					   VGint paramType) {
-		if(object != VG_INVALID_HANDLE) {
-			Object *o = (Object *)object;
+		auto o = Object::get<Object>(object);
+		if(object)
 			return o->vgGetParameteri(paramType);
-		}
-
-		gnuVG::Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
 		return 0;
 	}
 
 	VGint VG_API_ENTRY vgGetParameterVectorSize(VGHandle object,
 						    VGint paramType) VG_API_EXIT {
-		if(object != VG_INVALID_HANDLE) {
-			Object *o = (Object *)object;
+		auto o = Object::get<Object>(object);
+		if(object)
 			return o->vgGetParameterVectorSize(paramType);
-		}
-
-		gnuVG::Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
 		return 0;
 	}
 
 	void VG_API_ENTRY vgGetParameterfv(VGHandle object,
 					   VGint paramType,
 					   VGint count, VGfloat * values) VG_API_EXIT {
-		if(object != VG_INVALID_HANDLE) {
-			Object *o = (Object *)object;
+		auto o = Object::get<Object>(object);
+		if(object)
 			o->vgGetParameterfv(paramType, count, values);
-		}
-
-		gnuVG::Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
 	}
 
 	void VG_API_ENTRY vgGetParameteriv(VGHandle object,
 					   VGint paramType,
 					   VGint count, VGint * values) VG_API_EXIT {
-		if(object != VG_INVALID_HANDLE) {
-			Object *o = (Object *)object;
+		auto o = Object::get<Object>(object);
+		if(object)
 			o->vgGetParameteriv(paramType, count, values);
-		}
-
-		gnuVG::Context::get_current()->set_error(VG_BAD_HANDLE_ERROR);
 	}
 
 	/**********************
