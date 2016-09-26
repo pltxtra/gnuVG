@@ -57,9 +57,6 @@ namespace gnuVG {
 			// mask
 			do_mask			= 0x100,
 
-			// Loop&Blinn
-			do_loop_n_blinn		= 0x200,
-
 			// pre-translation
 			do_pretranslate		= 0x400
 		};

@@ -947,9 +947,6 @@ namespace gnuVG {
 			pipeline_mode == VG_STROKE_PATH ? stroke_paint : fill_paint;
 		int caps = Shader::do_flat_color | Shader::do_pretranslate;
 
-		if(active_pipeline == GNUVG_LB_PIPELINE)
-			caps |= Shader::do_loop_n_blinn;
-
 		bool gradient_enabled = false;
 		switch(active_paint->ptype) {
 		case VG_PAINT_TYPE_COLOR:

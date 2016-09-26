@@ -26,8 +26,6 @@
 #define ENABLE_GNUVG_PROFILER
 #include <VG/gnuVG_profiler.hh>
 
-#define __DAL
-
 namespace gnuVG {
 	std::map<int, Shader*> Shader::shader_library;
 
@@ -146,11 +144,6 @@ namespace gnuVG {
 				"varying vec2 v_textureCoord;\n"
 				;
 
-		if(caps & do_loop_n_blinn)
-			vshad <<
-				"attribute vec3 klm;\n"
-				"varying vec3 v_klm;\n";
-
 		if(caps & gradient_spread_mask)
 			vshad <<
 				"varying vec2 gradient_coord;\n";
@@ -178,10 +171,6 @@ namespace gnuVG {
 				;
 
 
-		if(caps & do_loop_n_blinn)
-			vshad <<
-				"  v_klm = klm;\n";
-
 		vshad <<
 			"}\n";
 
@@ -190,11 +179,6 @@ namespace gnuVG {
 
 	void Shader::build_fragment_shader(int caps) {
 		std::stringstream fshad;
-
-#ifdef __DAL
-		if(caps & do_loop_n_blinn)
-			fshad << "#extension GL_OES_standard_derivatives : enable\n";
-#endif
 
 		fshad <<
 			"precision highp float;\n"
@@ -209,9 +193,6 @@ namespace gnuVG {
 			fshad <<
 				"varying vec2 v_textureCoord;\n"
 				"uniform sampler2D m_texture;\n";
-
-		if(caps & do_loop_n_blinn)
-			fshad << "varying vec3 v_klm;\n";
 
 		auto primary_mode = caps & primary_mode_mask;
 		if(primary_mode == do_linear_gradient ||
@@ -257,47 +238,6 @@ namespace gnuVG {
 		if(caps & do_mask)
 			fshad <<
 				"  vec4 m = texture2D( m_texture, v_textureCoord );\n";
-
-		if(caps & do_loop_n_blinn) {
-			fshad <<
-#ifndef __DAL
-				"  float t = v_klm.x * v_klm.x * v_klm.x - v_klm.y * v_klm.z;\n"
-				"  float alpha = clamp(sign(t), 0.0, 1.0);\n"
-#else
-				"  // Gradients\n"
-//		"  vec3 px = dFdx(v_klm);\n"
-//		"  vec3 py = dFdy(v_klm);\n"
-				"  vec3 px = vec3(dFdx(v_klm.x),dFdx(v_klm.y),dFdx(v_klm.z));\n"
-				"  vec3 py = vec3(dFdy(v_klm.x),dFdy(v_klm.y),dFdy(v_klm.z));\n"
-				"\n"
-#if 1
-				"  // Chain rule\n"
-				"  float k2 = v_klm.x * v_klm.x;\n"
-				"  float c = k2 * v_klm.x - v_klm.y * v_klm.z;\n"
-				"  float k23 = 3.0 * k2;\n"
-				"  float cx = k23 * px.x - v_klm.z * px.y - v_klm.y * px.z;\n"
-				"  float cy = k23 * py.x - v_klm.z * py.y - v_klm.y * py.z;\n"
-				"\n"
-				"  // Signed distance\n"
-				"  float sd = c / sqrt(cx * cx + cy * cy);\n"
-				"\n"
-				"  // Linear alpha\n"
-				"  // FIXME: figure out why this needs to be\n"
-				"  // negated compared to the HLSL version, and also why\n"
-				"  // we need an adjustment by +1.0 for it to look good.\n"
-				"  // float alpha = clamp(0.5 - sd, 0.0, 1.0);\n"
-				"  float alpha = clamp(0.5 + sd, 0.0, 1.0);\n"
-#else
-				"float fx = (2.0*v_klm.x)*px.x - px.y;\n"
-				"float fy = (2.0*v_klm.x)*py.x - py.y;\n"
-				"// Signed distance\n"
-				"float sd = (v_klm.x*v_klm.x - v_klm.y)/sqrt(fx*fx + fy*fy);\n"
-				"// Linear alpha\n"
-				"float alpha = clamp(0.5 + sd, 0.0, 1.0);\n"
-#endif
-#endif
-				;
-		}
 
 		if(primary_mode >= do_blend_src)
 			fshad <<
@@ -445,9 +385,6 @@ namespace gnuVG {
 		if(primary_mode >= do_blend_src)
 			fshad <<
 				"  vec4 c = vec4(co[0], co[1], co[2], ao);\n";
-
-		if(caps & do_loop_n_blinn)
-			fshad << "  c = alpha * c;\n";
 
 		if(caps & do_mask)
 			fshad << "  c = m.a * c;\n";

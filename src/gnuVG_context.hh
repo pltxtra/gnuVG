@@ -75,8 +75,7 @@ namespace gnuVG {
 		};
 
 		enum gnuVGPipeline {
-			GNUVG_SIMPLE_PIPELINE,
-			GNUVG_LB_PIPELINE
+			GNUVG_SIMPLE_PIPELINE
 		};
 
 	protected:
