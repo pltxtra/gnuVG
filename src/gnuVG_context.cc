@@ -1250,14 +1250,6 @@ namespace gnuVG {
 		return nullptr;
 	}
 
-	void Context::clear_framebuffer(const FrameBuffer* framebuffer,
-					VGint x, VGint y,
-					VGint width, VGint height) {
-		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->framebuffer);
-		clear(x, y, width, height);
-		glBindFramebuffer(GL_FRAMEBUFFER, current_framebuffer->framebuffer);
-	}
-
 	void Context::save_current_framebuffer() {
 		framebuffer_storage.push(current_framebuffer);
 	}

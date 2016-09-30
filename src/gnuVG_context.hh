@@ -194,9 +194,6 @@ namespace gnuVG {
 		void delete_framebuffer(FrameBuffer* framebuffer);
 		void render_to_framebuffer(const FrameBuffer* framebuffer);
 		const FrameBuffer* get_internal_framebuffer(gnuVGFrameBuffer selection);
-		void clear_framebuffer(const FrameBuffer* framebuffer,
-				       VGint x, VGint y,
-				       VGint width, VGint height);
 
 		// used to temporarily switch to another framebuffer
 		void save_current_framebuffer();

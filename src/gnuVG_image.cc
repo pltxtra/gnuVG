@@ -40,7 +40,10 @@ namespace gnuVG {
 	void Image::vgClearImage(VGint x, VGint y, VGint width, VGint height) {
 		auto ctx = Context::get_current();
 		if(ctx) {
-			ctx->clear_framebuffer(&framebuffer, x, y, width, height);
+			ctx->save_current_framebuffer();
+			ctx->render_to_framebuffer(&framebuffer);
+			ctx->clear(x, y, width, height);
+			ctx->restore_current_framebuffer();
 		}
 	}
 
