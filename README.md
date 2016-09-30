@@ -66,7 +66,7 @@ gnuVG is only a partial implementation of the OpenVG API.
   * Supported - specifics depend on the applied object
 * vgFlush/vgFinish()
   * Callable - no effect
-* vgSetGet*() - The following are supported:
+* vgSet/Get*() - The following are supported:
   * VG_MATRIX_MODE
   * VG_SCISSOR_RECTS
   * VG_STROKE_LINE_WIDTH
@@ -77,14 +77,14 @@ gnuVG is only a partial implementation of the OpenVG API.
   * VG_STROKE_DASH_PHASE_RESET
   * VG_CLEAR_COLOR
   * VG_GLYPH_ORIGIN
-  * VG_MASKING
   * VG_SCISSORING
-* Non supported vgSetGet*()
+* Non supported vgSet/Get*()
   * VG_FILL_RULE - Always VG_EVEN_ODD
   * VG_IMAGE_QUALITY - Always VG_IMAGE_QUALITY_BETTER
   * VG_RENDERING_QUALITY - Always VG_RENDERING_QUALITY_BETTER
   * VG_BLEND_MODE
   * VG_IMAGE_MODE
+  * VG_MASKING
   * VG_COLOR_TRANSFORM_VALUES
   * VG_STROKE_CAP_STYLE - Always VG_CAP_BUTT
   * VG_TILE_FILL_COLOR
@@ -104,7 +104,7 @@ gnuVG is only a partial implementation of the OpenVG API.
   * VG_MAX_IMAGE_BYTES
   * VG_MAX_FLOAT
 * All matrix operations
-* Masking
+* Masking - Non-supported
   * vgMask() - Partially implemented, mask parameter not supported, only VG_CLEAR/FILL_MASK
   * vgRenderToMask() - Supported
   * vgCreateMaskLayer() - Not supported

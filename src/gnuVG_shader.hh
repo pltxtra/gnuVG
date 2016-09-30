@@ -27,38 +27,39 @@ namespace gnuVG {
 	class Shader {
 	public:
 		enum Capabilities {
-			// primary mode - painting
-			do_flat_color		= 0x00,
-			do_linear_gradient	= 0x01,
-			do_radial_gradient	= 0x02,
-			do_pattern		= 0x03,
+			// primary mode
+			do_flat_color		= 0x0000,
+			do_linear_gradient	= 0x0001,
+			do_radial_gradient	= 0x0002,
+			do_pattern		= 0x0003,
 
-			// primary mode - blending
-			do_blend_src		= 0x04,
-			do_blend_src_over      	= 0x05,
-			do_blend_dst_over      	= 0x06,
-			do_blend_src_in      	= 0x07,
-			do_blend_dst_in      	= 0x08,
-			do_blend_multiply      	= 0x09,
-			do_blend_screen      	= 0x0a,
-			do_blend_darken      	= 0x0b,
-			do_blend_lighten      	= 0x0c,
-			do_blend_additive      	= 0x0d,
-			do_blend_subtract_alpha = 0x0e,
+			primary_mode_mask	= 0x000f,
 
-			primary_mode_mask	= 0x0f,
+			// blending mode
+			do_blend_src_over      	= 0x0000, // default
+			do_blend_src		= 0x1000,
+			do_blend_dst_over      	= 0x2000,
+			do_blend_src_in      	= 0x3000,
+			do_blend_dst_in      	= 0x4000,
+			do_blend_multiply      	= 0x5000,
+			do_blend_screen      	= 0x6000,
+			do_blend_darken      	= 0x7000,
+			do_blend_lighten      	= 0x8000,
+			do_blend_additive      	= 0x9000,
+			do_blend_subtract_alpha = 0xa000,
+
+			blend_mode_mask		= 0xf000,
 
 			// gradient spread mode
-			do_gradient_pad		= 0x10,
-			do_gradient_repeat	= 0x20,
-			do_gradient_reflect	= 0x30,
-			gradient_spread_mask	= 0x30,
+			do_gradient_pad		= 0x0010,
+			do_gradient_repeat	= 0x0020,
+			do_gradient_reflect	= 0x0030,
 
-			// mask
-			do_mask			= 0x100,
+			gradient_spread_mask	= 0x0030,
 
-			// pre-translation
-			do_pretranslate		= 0x400
+			// additional flags
+			do_mask			= 0x0100,
+			do_pretranslate		= 0x0400
 		};
 
 		static GLuint create_program(const char *vertexshader_source,
@@ -75,9 +76,7 @@ namespace gnuVG {
 		void set_surf2paint_matrix(GLfloat *s2p_matrix) const;
 
 		void set_mask_texture(GLuint tex) const;
-
-		void set_blend_source_texture(GLuint tex) const;
-		void set_blend_destination_texture(GLuint tex) const;
+		void set_pattern_texture(GLuint tex) const;
 
 		void set_color(GLfloat *clr) const;
 		void set_linear_parameters(GLfloat *vec) const;
@@ -103,9 +102,8 @@ namespace gnuVG {
 		GLint ColorHandle;
 		GLint Matrix;
 		GLint preTranslation;
-		GLint maskTexture;
 
-		GLint blend_sTexture, blend_dTexture;
+		GLint maskTexture, patternTexture;
 
 		GLint surf2paint;
 

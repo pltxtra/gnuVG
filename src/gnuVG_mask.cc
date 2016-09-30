@@ -144,49 +144,14 @@ extern "C" {
 		// save current framebuffer
 		ctx->save_current_framebuffer();
 
-		auto fb_tmpa = ctx->get_internal_framebuffer(Context::GNUVG_TEMPORARY_A);
-		auto fb_tmpb = ctx->get_internal_framebuffer(Context::GNUVG_TEMPORARY_B);
 		auto fb_mask = ctx->get_internal_framebuffer(Context::GNUVG_MASK_BUFFER);
 
-		// switch to temporary buffer A for rendering new mask data
-		ctx->render_to_framebuffer(fb_tmpa);
-
-		glDisable(GL_BLEND);
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		// Render to mask
+		ctx->render_to_framebuffer(fb_mask);
 
 		// perform the operation
 		perform_operation();
 
-		// select blend mode based on mask operation
-		Context::gnuVGBlendMode bmode = Context::GNUVG_BLEND_SRC_OVER;
-
-		switch(operation) {
-		case VG_MASK_OPERATION_FORCE_SIZE:
-			break;
-		case VG_CLEAR_MASK:
-		case VG_FILL_MASK:
-		case VG_SET_MASK:
-			bmode = Context::GNUVG_BLEND_SRC;
-			break;
-		case VG_UNION_MASK:
-			bmode = Context::GNUVG_BLEND_SRC_OVER;
-			break;
-		case VG_INTERSECT_MASK:
-			bmode = Context::GNUVG_BLEND_SRC_IN;
-			break;
-		case VG_SUBTRACT_MASK:
-			bmode = Context::GNUVG_BLEND_SUBTRACT_ALPHA;
-			break;
-		}
-		// blend new_mask -> old mask store result in temporary buffer B
-		ctx->render_to_framebuffer(fb_tmpb);
-		ctx->blend_framebuffers(fb_tmpa, fb_mask, bmode);
-
-		// switch the mask buffer to temporary buffer B
-		ctx->switch_mask_to(Context::GNUVG_TEMPORARY_B);
-
-		glEnable(GL_BLEND);
 		// restore previously saved framebuffer
 		ctx->restore_current_framebuffer();
 	}
@@ -201,12 +166,9 @@ extern "C" {
 		// switch to temporary buffer A for rendering new mask data
 		ctx->render_to_framebuffer(fb_mask);
 
-		glDisable(GL_BLEND);
-
 		// perform the operation
 		perform_operation();
 
-		glEnable(GL_BLEND);
 		// restore previously saved framebuffer
 		ctx->restore_current_framebuffer();
 	}

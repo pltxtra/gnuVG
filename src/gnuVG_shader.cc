@@ -62,16 +62,10 @@ namespace gnuVG {
 		glUniform1i(maskTexture, 1);
 	}
 
-	void Shader::set_blend_source_texture(GLuint tex) const {
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, tex);
-		glUniform1i(blend_sTexture, 1);
-	}
-
-	void Shader::set_blend_destination_texture(GLuint tex) const {
+	void Shader::set_pattern_texture(GLuint tex) const {
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, tex);
-		glUniform1i(blend_dTexture, 2);
+		glUniform1i(patternTexture, 2);
 	}
 
 	void Shader::set_color(GLfloat *clr) const {
@@ -222,11 +216,6 @@ namespace gnuVG {
 			}
 		} else if(primary_mode == do_pattern) {
 			/* not implemented */
-		} else if(primary_mode >= do_blend_src) {
-			fshad <<
-				"uniform sampler2D s_texture;\n"
-				"uniform sampler2D d_texture;\n"
-				;
 		}
 
 		fshad << "void main() {\n";
@@ -238,21 +227,6 @@ namespace gnuVG {
 		if(caps & do_mask)
 			fshad <<
 				"  vec4 m = texture2D( m_texture, v_textureCoord );\n";
-
-		if(primary_mode >= do_blend_src)
-			fshad <<
-				"  vec4 src = texture2D( s_texture, v_textureCoord );\n"
-				"  vec4 dst = texture2D( d_texture, v_textureCoord );\n"
-				"\n"
-				"  vec3 Cs = src.rgb;\n"
-				"  vec3 Cb = dst.rgb;\n"
-				"  float as = src.a;\n"
-				"  float ab = dst.a;\n"
-				"  vec3 co;\n"
-				"  float ao;\n"
-				"\n"
-
-				;
 
 		switch(primary_mode) {
 		case do_flat_color:
@@ -302,89 +276,7 @@ namespace gnuVG {
 				"    previous_color = stop_colors[i];\n"
 				"  }\n";
 			break;
-
-		case do_blend_src:
-			fshad <<
-				"    co = as * Cs;\n"
-				"    ao = as;\n"
-				;
-			break;
-
-		case do_blend_src_over:
-			fshad <<
-				"    co = as * Cs + ab * Cb * (1.0 - as);\n"
-				"    ao = as + ab * (1.0 - as);\n"
-				;
-			break;
-
-		case do_blend_dst_over:
-			fshad <<
-				"    co = as * Cs * (1.0 - ab) + ab * Cb;\n"
-				"    ao = as * (1.0 - ab) + ab;\n"
-				;
-			break;
-
-		case do_blend_src_in:
-			fshad <<
-				"    co = as * Cs * ab;\n"
-				"    ao = as * ab;\n"
-				;
-			break;
-
-		case do_blend_dst_in:
-			fshad <<
-				"    co = ab * Cb * as;\n"
-				"    ao = ab * as;\n"
-				;
-			break;
-
-		case do_blend_multiply:
-			fshad <<
-				"    co = as * Cs * (1.0 - ab) + ab * Cb * (1.0 - as) + Cs * Cb;\n"
-				"    ao = as + ab * (1.0 - as);\n"
-				;
-			break;
-
-		case do_blend_screen:
-			fshad <<
-				"    co = Cs + Cb - Cs * Cb;\n"
-				"    ao = as + ab * (1.0 - as);\n"
-				;
-			break;
-
-		case do_blend_darken:
-			fshad <<
-				"    co = min(as * Cs + ab * Cb * (1.0 - as), as * Cs * (1.0 - ab) + ab * Cb);\n"
-				"    ao = as + ab * (1.0 - as);\n"
-				;
-			break;
-
-		case do_blend_lighten:
-			fshad <<
-				"    co = max(as * Cs + ab * Cb * (1.0 - as), as * Cs * (1.0 - ab) + ab * Cb);\n"
-				"    ao = as + ab * (1.0 - as);\n"
-				;
-			break;
-
-		case do_blend_additive:
-			fshad <<
-				"    co = min(Cs + Cb, 1.0);\n"
-				"    ao = min(as + ab, 1.0);\n"
-				;
-			break;
-
-		case do_blend_subtract_alpha:
-			fshad <<
-				"    co = vec3(0.0, 0.0, 0.0);\n"
-				"    ao = ab * (1.0 - as);\n"
-				;
-			break;
-
 		}
-
-		if(primary_mode >= do_blend_src)
-			fshad <<
-				"  vec4 c = vec4(co[0], co[1], co[2], ao);\n";
 
 		if(caps & do_mask)
 			fshad << "  c = m.a * c;\n";
@@ -483,10 +375,9 @@ namespace gnuVG {
 		ColorHandle = glGetUniformLocation(program_id, "v_color");
 		Matrix = glGetUniformLocation(program_id, "modelview_projection");
 		preTranslation = glGetUniformLocation(program_id, "pre_translation");
-		maskTexture = glGetUniformLocation(program_id , "m_texture" );
 
-		blend_sTexture = glGetUniformLocation(program_id , "s_texture" );
-		blend_dTexture = glGetUniformLocation(program_id , "d_texture" );
+		maskTexture = glGetUniformLocation(program_id , "m_texture" );
+		patternTexture = glGetUniformLocation(program_id , "p_texture" );
 
 		surf2paint = glGetUniformLocation(program_id, "surf2paint");
 

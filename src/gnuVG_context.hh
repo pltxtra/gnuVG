@@ -185,11 +185,6 @@ namespace gnuVG {
 		void transform_bounding_box(Point* bbox, VGfloat *sp_ep);
 
 		void get_pixelsize(VGint& width, VGint& height);
-
-		void blend_framebuffers(const FrameBuffer* fb_src,
-					const FrameBuffer* fb_dst,
-					gnuVGBlendMode blend_mode
-			);
 		void switch_mask_to(gnuVGFrameBuffer to_this_temporary);
 
 		bool create_framebuffer(FrameBuffer* destination,
