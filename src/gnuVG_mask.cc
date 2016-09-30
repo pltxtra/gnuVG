@@ -24,6 +24,10 @@
 //#define __DO_GNUVG_DEBUG
 #include "gnuVG_debug.hh"
 
+#define MASK_R_CHANNEL_VALUE 0.0f
+#define MASK_G_CHANNEL_VALUE 0.0f
+#define MASK_B_CHANNEL_VALUE 0.0f
+
 namespace gnuVG {
 	MaskLayer::MaskLayer(Context* ctx, VGint width, VGint height) {
 		if(ctx->create_framebuffer(
@@ -43,7 +47,14 @@ namespace gnuVG {
 	void MaskLayer::vgFillMaskLayer(VGint x, VGint y, VGint width, VGint height, VGfloat value) {
 		auto ctx = Context::get_current();
 		if(ctx) {
-			ctx->clear_framebuffer(&framebuffer, x, y, width, height);
+			ctx->save_current_framebuffer();
+			ctx->render_to_framebuffer(&framebuffer);
+			ctx->trivial_fill_area(x, y, width, height,
+					       MASK_R_CHANNEL_VALUE,
+					       MASK_G_CHANNEL_VALUE,
+					       MASK_B_CHANNEL_VALUE,
+					       value);
+			ctx->restore_current_framebuffer();
 		}
 	}
 
@@ -188,7 +199,10 @@ extern "C" {
 			render_direct_helper(ctx,
 					     [ctx, x, y, width, height, value]() {
 						     ctx->trivial_fill_area(x, y, width, height,
-									    1.0f, 0.0f, 0.0f, value);
+									    MASK_R_CHANNEL_VALUE,
+									    MASK_G_CHANNEL_VALUE,
+									    MASK_B_CHANNEL_VALUE,
+									    value);
 					     }
 				);
 		} else {
@@ -223,7 +237,10 @@ extern "C" {
 					      mpaint = vgCreatePaint();
 
 				      if(mpaint) {
-					      VGfloat rgba[] = {0.0f, 1.0f, 0.0f, 1.0f};
+					      VGfloat rgba[] = {MASK_R_CHANNEL_VALUE,
+								MASK_G_CHANNEL_VALUE,
+								MASK_B_CHANNEL_VALUE,
+								1.0f};
 
 					      // remeber old settings for mask/scissors
 					      VGint do_mask, do_scissors;
