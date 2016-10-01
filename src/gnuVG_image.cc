@@ -82,11 +82,11 @@ namespace gnuVG {
 	}
 
 	void Image::vgSetPixels(VGint dx, VGint dy,
-				Image* src, VGint sx, VGint sy,
+				VGint sx, VGint sy,
 				VGint width, VGint height) {
 	}
 
-	void Image::vgGetPixels(Image* dst, VGint dx, VGint dy,
+	void Image::vgGetPixels(VGint dx, VGint dy,
 				VGint sx, VGint sy,
 				VGint width, VGint height) {
 	}

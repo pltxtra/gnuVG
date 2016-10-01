@@ -61,9 +61,9 @@ namespace gnuVG {
 				 VGboolean dither);
 		void vgDrawImage();
 		static void vgSetPixels(VGint dx, VGint dy,
-					Image* src, VGint sx, VGint sy,
+					VGint sx, VGint sy,
 					VGint width, VGint height);
-		static void vgGetPixels(Image* dst, VGint dx, VGint dy,
+		static void vgGetPixels(VGint dx, VGint dy,
 					VGint sx, VGint sy,
 					VGint width, VGint height);
 		static void vgWritePixels(const void * data, VGint dataStride,
