@@ -182,6 +182,22 @@ namespace gnuVG {
 		void render_to_framebuffer(const FrameBuffer* framebuffer);
 		const FrameBuffer* get_internal_framebuffer(gnuVGFrameBuffer selection);
 
+		void copy_framebuffer_to_framebuffer(const FrameBuffer* dst,
+						     const FrameBuffer* src,
+						     VGint dx, VGint dy,
+						     VGint sx, VGint sy,
+						     VGint width, VGint height);
+		void copy_framebuffer_to_memory(const FrameBuffer* src,
+						void *memory, VGint stride,
+						VGImageFormat fmt,
+						VGint x, VGint y,
+						VGint width, VGint height);
+		void copy_memory_to_framebuffer(const FrameBuffer* dst,
+						const void *memory, VGint stride,
+						VGImageFormat fmt,
+						VGint x, VGint y,
+						VGint width, VGint height);
+
 		// used to temporarily switch to another framebuffer
 		void save_current_framebuffer();
 		void restore_current_framebuffer();

@@ -61,7 +61,13 @@ namespace gnuVG {
 	void MaskLayer::vgCopyMask(VGint dx, VGint dy,
 				   VGint sx, VGint sy,
 				   VGint width, VGint height) {
-
+		auto ctx = Context::get_current();
+		if(ctx) {
+			auto fbuf = ctx->get_internal_framebuffer(Context::GNUVG_CURRENT_FRAMEBUFFER);
+			ctx->copy_framebuffer_to_framebuffer(
+				fbuf, &framebuffer,
+				dx, dy, sx, sy, width, height);
+		}
 	}
 
 	/* inherited virtual interface */

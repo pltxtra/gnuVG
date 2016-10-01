@@ -70,6 +70,12 @@ namespace gnuVG {
 				Image* src, VGint sx, VGint sy,
 				VGint width, VGint height,
 				VGboolean dither) {
+		auto ctx = Context::get_current();
+		if(ctx) {
+			ctx->copy_framebuffer_to_framebuffer(
+				&framebuffer, &src->framebuffer,
+				dx, dy, sx, sy, width, height);
+		}
 	}
 
 	void Image::vgDrawImage() {
