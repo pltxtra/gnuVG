@@ -50,12 +50,30 @@ namespace gnuVG {
 	void Image::vgImageSubData(const void * data, VGint dataStride,
 				   VGImageFormat dataFormat,
 				   VGint x, VGint y, VGint width, VGint height) {
+		auto ctx = Context::get_current();
+		if(ctx) {
+			ctx->copy_memory_to_framebuffer(
+				&framebuffer,
+				data, dataStride,
+				dataFormat,
+				x, y,
+				width, height);
+		}
 	}
 
 	void Image::vgGetImageSubData(void * data, VGint dataStride,
 				      VGImageFormat dataFormat,
 				      VGint x, VGint y,
 				      VGint width, VGint height) {
+		auto ctx = Context::get_current();
+		if(ctx) {
+			ctx->copy_framebuffer_to_memory(
+				&framebuffer,
+				data, dataStride,
+				dataFormat,
+				x, y,
+				width, height);
+		}
 	}
 
 	Image* Image::vgChildImage(VGint x, VGint y, VGint width, VGint height) {
@@ -67,7 +85,7 @@ namespace gnuVG {
 	}
 
 	void Image::vgCopyImage(VGint dx, VGint dy,
-				Image* src, VGint sx, VGint sy,
+				std::shared_ptr<Image> src, VGint sx, VGint sy,
 				VGint width, VGint height,
 				VGboolean dither) {
 		auto ctx = Context::get_current();
@@ -84,30 +102,26 @@ namespace gnuVG {
 	void Image::vgSetPixels(VGint dx, VGint dy,
 				VGint sx, VGint sy,
 				VGint width, VGint height) {
+		auto ctx = Context::get_current();
+		if(ctx) {
+			auto fbuf = ctx->get_internal_framebuffer(Context::GNUVG_CURRENT_FRAMEBUFFER);
+			ctx->copy_framebuffer_to_framebuffer(
+				fbuf, &framebuffer,
+				dx, dy, sx, sy, width, height);
+		}
 	}
 
 	void Image::vgGetPixels(VGint dx, VGint dy,
 				VGint sx, VGint sy,
 				VGint width, VGint height) {
+		auto ctx = Context::get_current();
+		if(ctx) {
+			auto fbuf = ctx->get_internal_framebuffer(Context::GNUVG_CURRENT_FRAMEBUFFER);
+			ctx->copy_framebuffer_to_framebuffer(
+				&framebuffer, fbuf,
+				dx, dy, sx, sy, width, height);
+		}
 	}
-
-	void Image::vgWritePixels(const void * data, VGint dataStride,
-				  VGImageFormat dataFormat,
-				  VGint dx, VGint dy,
-				  VGint width, VGint height) {
-	}
-
-	void Image::vgReadPixels(void * data, VGint dataStride,
-				 VGImageFormat dataFormat,
-				 VGint sx, VGint sy,
-				 VGint width, VGint height) {
-	}
-
-	void Image::vgCopyPixels(VGint dx, VGint dy,
-				 VGint sx, VGint sy,
-				 VGint width, VGint height) {
-	}
-
 
 	/* inherited virtual interface */
 	void Image::vgSetParameterf(VGint paramType, VGfloat value) {
@@ -208,6 +222,11 @@ extern "C" {
 					 const void * data, VGint dataStride,
 					 VGImageFormat dataFormat,
 					 VGint x, VGint y, VGint width, VGint height) VG_API_EXIT {
+		auto i = Object::get<Image>(image);
+		if(i)
+			i->vgImageSubData(data, dataStride,
+					  dataFormat,
+					  x, y, width, height);
 	}
 
 	void VG_API_ENTRY vgGetImageSubData(VGImage image,
@@ -215,6 +234,11 @@ extern "C" {
 					    VGImageFormat dataFormat,
 					    VGint x, VGint y,
 					    VGint width, VGint height) VG_API_EXIT {
+		auto i = Object::get<Image>(image);
+		if(i)
+			i->vgGetImageSubData(data, dataStride,
+					     dataFormat,
+					     x, y, width, height);
 	}
 
 	VGImage VG_API_ENTRY vgChildImage(VGImage parent,
@@ -230,6 +254,14 @@ extern "C" {
 				      VGImage src, VGint sx, VGint sy,
 				      VGint width, VGint height,
 				      VGboolean dither) VG_API_EXIT {
+		auto d = Object::get<Image>(dst);
+		auto s = Object::get<Image>(src);
+		if(d && s)
+			d->vgCopyImage(dx, dy,
+				       s,
+				       sx, sy,
+				       width, height,
+				       dither);
 	}
 
 	void VG_API_ENTRY vgDrawImage(VGImage image) VG_API_EXIT {
@@ -238,23 +270,49 @@ extern "C" {
 	void VG_API_ENTRY vgSetPixels(VGint dx, VGint dy,
 				      VGImage src, VGint sx, VGint sy,
 				      VGint width, VGint height) VG_API_EXIT {
+		auto i = Object::get<Image>(src);
+		if(i)
+			i->vgSetPixels(dx, dy, sx, sy, width, height);
 	}
 
 	void VG_API_ENTRY vgGetPixels(VGImage dst, VGint dx, VGint dy,
 				      VGint sx, VGint sy,
 				      VGint width, VGint height) VG_API_EXIT {
+		auto i = Object::get<Image>(dst);
+		if(i)
+			i->vgGetPixels(dx, dy, sx, sy, width, height);
 	}
 
 	void VG_API_ENTRY vgWritePixels(const void * data, VGint dataStride,
 					VGImageFormat dataFormat,
 					VGint dx, VGint dy,
 					VGint width, VGint height) VG_API_EXIT {
+		auto ctx = Context::get_current();
+		if(ctx) {
+			auto fbuf = ctx->get_internal_framebuffer(Context::GNUVG_CURRENT_FRAMEBUFFER);
+			ctx->copy_memory_to_framebuffer(
+				fbuf,
+				data, dataStride,
+				dataFormat,
+				dx, dy,
+				width, height);
+		}
 	}
 
 	void VG_API_ENTRY vgReadPixels(void * data, VGint dataStride,
 				       VGImageFormat dataFormat,
 				       VGint sx, VGint sy,
 				       VGint width, VGint height) VG_API_EXIT {
+		auto ctx = Context::get_current();
+		if(ctx) {
+			auto fbuf = ctx->get_internal_framebuffer(Context::GNUVG_CURRENT_FRAMEBUFFER);
+			ctx->copy_framebuffer_to_memory(
+				fbuf,
+				data, dataStride,
+				dataFormat,
+				sx, sy,
+				width, height);
+		}
 	}
 
 	void VG_API_ENTRY vgCopyPixels(VGint dx, VGint dy,

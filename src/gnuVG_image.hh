@@ -56,27 +56,17 @@ namespace gnuVG {
 		Image* vgChildImage(VGint x, VGint y, VGint width, VGint height);
 		Image* vgGetParent();
 		void vgCopyImage(VGint dx, VGint dy,
-				 Image* src, VGint sx, VGint sy,
+				 std::shared_ptr<Image> src,
+				 VGint sx, VGint sy,
 				 VGint width, VGint height,
 				 VGboolean dither);
 		void vgDrawImage();
-		static void vgSetPixels(VGint dx, VGint dy,
-					VGint sx, VGint sy,
-					VGint width, VGint height);
-		static void vgGetPixels(VGint dx, VGint dy,
-					VGint sx, VGint sy,
-					VGint width, VGint height);
-		static void vgWritePixels(const void * data, VGint dataStride,
-					  VGImageFormat dataFormat,
-					  VGint dx, VGint dy,
-					  VGint width, VGint height);
-		static void vgReadPixels(void * data, VGint dataStride,
-					 VGImageFormat dataFormat,
-					 VGint sx, VGint sy,
-					 VGint width, VGint height);
-		static void vgCopyPixels(VGint dx, VGint dy,
-					 VGint sx, VGint sy,
-					 VGint width, VGint height);
+		void vgSetPixels(VGint dx, VGint dy,
+				 VGint sx, VGint sy,
+				 VGint width, VGint height);
+		void vgGetPixels(VGint dx, VGint dy,
+				 VGint sx, VGint sy,
+				 VGint width, VGint height);
 
 		/* inherited virtual interface */
 		virtual void vgSetParameterf(VGint paramType, VGfloat value) override;
