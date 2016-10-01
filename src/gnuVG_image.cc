@@ -86,15 +86,15 @@ namespace gnuVG {
 				VGint width, VGint height) {
 	}
 
+	void Image::vgGetPixels(Image* dst, VGint dx, VGint dy,
+				VGint sx, VGint sy,
+				VGint width, VGint height) {
+	}
+
 	void Image::vgWritePixels(const void * data, VGint dataStride,
 				  VGImageFormat dataFormat,
 				  VGint dx, VGint dy,
 				  VGint width, VGint height) {
-	}
-
-	void Image::vgGetPixels(Image* dst, VGint dx, VGint dy,
-				VGint sx, VGint sy,
-				VGint width, VGint height) {
 	}
 
 	void Image::vgReadPixels(void * data, VGint dataStride,
@@ -240,15 +240,15 @@ extern "C" {
 				      VGint width, VGint height) VG_API_EXIT {
 	}
 
+	void VG_API_ENTRY vgGetPixels(VGImage dst, VGint dx, VGint dy,
+				      VGint sx, VGint sy,
+				      VGint width, VGint height) VG_API_EXIT {
+	}
+
 	void VG_API_ENTRY vgWritePixels(const void * data, VGint dataStride,
 					VGImageFormat dataFormat,
 					VGint dx, VGint dy,
 					VGint width, VGint height) VG_API_EXIT {
-	}
-
-	void VG_API_ENTRY vgGetPixels(VGImage dst, VGint dx, VGint dy,
-				      VGint sx, VGint sy,
-				      VGint width, VGint height) VG_API_EXIT {
 	}
 
 	void VG_API_ENTRY vgReadPixels(void * data, VGint dataStride,

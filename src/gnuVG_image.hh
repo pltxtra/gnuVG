@@ -63,13 +63,13 @@ namespace gnuVG {
 		static void vgSetPixels(VGint dx, VGint dy,
 					Image* src, VGint sx, VGint sy,
 					VGint width, VGint height);
+		static void vgGetPixels(Image* dst, VGint dx, VGint dy,
+					VGint sx, VGint sy,
+					VGint width, VGint height);
 		static void vgWritePixels(const void * data, VGint dataStride,
 					  VGImageFormat dataFormat,
 					  VGint dx, VGint dy,
 					  VGint width, VGint height);
-		static void vgGetPixels(Image* dst, VGint dx, VGint dy,
-					VGint sx, VGint sy,
-					VGint width, VGint height);
 		static void vgReadPixels(void * data, VGint dataStride,
 					 VGImageFormat dataFormat,
 					 VGint sx, VGint sy,
