@@ -42,6 +42,31 @@ namespace gnuVG {
 
 	void Shader::use_shader() const {
 		glUseProgram(program_id);
+		set_blending(blend_src_over);
+	}
+
+	void Shader::set_blending(Blending bmode) const {
+		switch(bmode) {
+		case blend_src: // blend_src equals no blending
+			glDisable(GL_BLEND);
+			break;
+
+		case blend_dst_over:
+		case blend_src_in:
+		case blend_dst_in:
+		case blend_multiply:
+		case blend_screen:
+		case blend_darken:
+		case blend_lighten:
+		case blend_additive:
+		default:
+		case blend_src_over:
+			// everything not supported
+			// will default into src_over
+			glEnable(GL_BLEND);
+			glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			break;
+		}
 	}
 
 	void Shader::set_matrix(GLfloat *mtrx) const {

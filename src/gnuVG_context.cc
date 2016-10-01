@@ -57,7 +57,6 @@ namespace gnuVG {
 
 	void Context::set_current(Context *ctx) {
 		current_context = ctx;
-		ctx->prepare_pipeline();
 	}
 
 	void Context::set_error(VGErrorCode new_error) {
@@ -317,7 +316,6 @@ namespace gnuVG {
 			break;
 			/* Mode settings */
 		case VG_MATRIX_MODE:
-		{
 			switch((VGMatrixMode)value) {
 			case VG_MATRIX_PATH_USER_TO_SURFACE:
 				user_matrix = GNUVG_MATRIX_PATH_USER_TO_SURFACE;
@@ -338,13 +336,51 @@ namespace gnuVG {
 				set_error(VG_ILLEGAL_ARGUMENT_ERROR);
 				break;
 			}
-		}
+			break;
 
 		case VG_FILL_RULE:
 		case VG_IMAGE_QUALITY:
 		case VG_RENDERING_QUALITY:
-		case VG_BLEND_MODE:
 		case VG_IMAGE_MODE:
+			break;
+
+		case VG_BLEND_MODE:
+			switch((VGBlendMode)value) {
+			case VG_BLEND_SRC:
+				blend_mode = Shader::blend_src;
+				break;
+			case VG_BLEND_SRC_OVER:
+				blend_mode = Shader::blend_src_over;
+				break;
+			case VG_BLEND_DST_OVER:
+				blend_mode = Shader::blend_dst_over;
+				break;
+			case VG_BLEND_SRC_IN:
+				blend_mode = Shader::blend_src_in;
+				break;
+			case VG_BLEND_DST_IN:
+				blend_mode = Shader::blend_dst_in;
+				break;
+			case VG_BLEND_MULTIPLY:
+				blend_mode = Shader::blend_multiply;
+				break;
+			case VG_BLEND_SCREEN:
+				blend_mode = Shader::blend_screen;
+				break;
+			case VG_BLEND_DARKEN:
+				blend_mode = Shader::blend_darken;
+				break;
+			case VG_BLEND_LIGHTEN:
+				blend_mode = Shader::blend_lighten;
+				break;
+			case VG_BLEND_ADDITIVE:
+				blend_mode = Shader::blend_additive;
+				break;
+			default:
+				set_error(VG_ILLEGAL_ARGUMENT_ERROR);
+				break;
+			}
+
 			break;
 
 			/* Color Transformation */
@@ -591,8 +627,32 @@ namespace gnuVG {
 		case VG_FILL_RULE:
 		case VG_IMAGE_QUALITY:
 		case VG_RENDERING_QUALITY:
-		case VG_BLEND_MODE:
 		case VG_IMAGE_MODE:
+			break;
+
+		case VG_BLEND_MODE:
+			switch(blend_mode) {
+			case Shader::blend_src:
+				return VG_BLEND_SRC;
+			case Shader::blend_src_over:
+				return VG_BLEND_SRC_OVER;
+			case Shader::blend_dst_over:
+				return VG_BLEND_DST_OVER;
+			case Shader::blend_src_in:
+				return VG_BLEND_SRC_IN;
+			case Shader::blend_dst_in:
+				return VG_BLEND_DST_IN;
+			case Shader::blend_multiply:
+				return VG_BLEND_MULTIPLY;
+			case Shader::blend_screen:
+				return VG_BLEND_SCREEN;
+			case Shader::blend_darken:
+				return VG_BLEND_DARKEN;
+			case Shader::blend_lighten:
+				return VG_BLEND_LIGHTEN;
+			case Shader::blend_additive:
+				return VG_BLEND_ADDITIVE;
+			}
 			break;
 
 			/* Scissoring rectangles */
@@ -810,19 +870,21 @@ namespace gnuVG {
 			render_to_framebuffer(&screen_buffer);
 	}
 
-	void Context::prepare_pipeline() {
-		glEnable(GL_BLEND);
-		glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	}
+	void Context::clear(VGint x, VGint y,
+			    VGint width, VGint height) {
 
-	void Context::clear(VGint x_not_implemented, VGint y_not_implemented,
-			    VGint width_not_implemented, VGint height_not_implemented) {
-		GNUVG_DEBUG("Context::clear() - this method is not properly implemented yet... \n");
-		glClearColor(clear_color.r,
-			     clear_color.g,
-			     clear_color.b,
-			     clear_color.a);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		// remember current blend mode
+		auto old_blend = vgGeti(VG_BLEND_MODE);
+
+		// fill the area with the clear color, using no blending
+		vgSeti(VG_BLEND_MODE, VG_BLEND_SRC);
+		trivial_fill_area(x, y, width, height,
+				  clear_color.r,
+				  clear_color.g,
+				  clear_color.b,
+				  clear_color.a);
+
+		vgSeti(VG_BLEND_MODE, old_blend); // Restore blend mode
 	}
 
 	void Context::trivial_render_elements(
@@ -839,7 +901,11 @@ namespace gnuVG {
 
 		VGfloat col[] = {r, g, b, a};
 
-		active_shader = Shader::get_shader(Shader::do_flat_color);
+		active_shader = Shader::get_shader(
+			Shader::do_flat_color
+			);
+		active_shader->use_shader();
+		active_shader->set_blending(blend_mode);
 		active_shader->set_matrix(mat);
 		active_shader->set_color(col);
 		active_shader->load_2dvertex_array(vertices, 0);
@@ -983,6 +1049,7 @@ namespace gnuVG {
 
 		active_shader = Shader::get_shader(caps);
 		active_shader->use_shader();
+		active_shader->set_blending(blend_mode);
 		active_shader->set_matrix(conversion_matrix_data);
 		active_shader->set_pre_translation(pre_translation);
 

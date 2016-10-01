@@ -60,20 +60,6 @@ namespace gnuVG {
 			GNUVG_MATRIX_MAX = 5
 		};
 
-		enum gnuVGBlendMode {
-			GNUVG_BLEND_SRC = 0,
-			GNUVG_BLEND_SRC_OVER = 1,
-			GNUVG_BLEND_DST_OVER = 2,
-			GNUVG_BLEND_SRC_IN = 3,
-			GNUVG_BLEND_DST_IN = 4,
-			GNUVG_BLEND_MULTIPLY = 5,
-			GNUVG_BLEND_SCREEN = 6,
-			GNUVG_BLEND_DARKEN = 7,
-			GNUVG_BLEND_LIGHTEN = 8,
-			GNUVG_BLEND_ADDITIVE = 9,
-			GNUVG_BLEND_SUBTRACT_ALPHA = 10
-		};
-
 		enum gnuVGPipeline {
 			GNUVG_SIMPLE_PIPELINE
 		};
@@ -83,6 +69,8 @@ namespace gnuVG {
 
 		gnuVGPipeline active_pipeline;
 		VGPaintMode pipeline_mode;
+
+		Shader::Blending blend_mode;
 
 		static Context *current_context;
 
@@ -171,7 +159,6 @@ namespace gnuVG {
 		void trivial_fill_area(
 			VGint x, VGint y, VGint width, VGint height,
 			VGfloat r, VGfloat g, VGfloat b, VGfloat a);
-		void prepare_pipeline();
 		void select_conversion_matrix(MatrixMode conversion_matrix);
 		void use_pipeline(gnuVGPipeline new_pipeline, VGPaintMode new_mode);
 		void reset_pre_translation();

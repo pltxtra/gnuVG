@@ -35,21 +35,6 @@ namespace gnuVG {
 
 			primary_mode_mask	= 0x000f,
 
-			// blending mode
-			do_blend_src_over      	= 0x0000, // default
-			do_blend_src		= 0x1000,
-			do_blend_dst_over      	= 0x2000,
-			do_blend_src_in      	= 0x3000,
-			do_blend_dst_in      	= 0x4000,
-			do_blend_multiply      	= 0x5000,
-			do_blend_screen      	= 0x6000,
-			do_blend_darken      	= 0x7000,
-			do_blend_lighten      	= 0x8000,
-			do_blend_additive      	= 0x9000,
-			do_blend_subtract_alpha = 0xa000,
-
-			blend_mode_mask		= 0xf000,
-
 			// gradient spread mode
 			do_gradient_pad		= 0x0010,
 			do_gradient_repeat	= 0x0020,
@@ -62,6 +47,19 @@ namespace gnuVG {
 			do_pretranslate		= 0x0400
 		};
 
+		enum Blending {
+			blend_src_over      	= 0x0000, // default
+			blend_src		= 0x1000,
+			blend_dst_over      	= 0x2000,
+			blend_src_in      	= 0x3000,
+			blend_dst_in      	= 0x4000,
+			blend_multiply      	= 0x5000,
+			blend_screen      	= 0x6000,
+			blend_darken      	= 0x7000,
+			blend_lighten      	= 0x8000,
+			blend_additive      	= 0x9000
+		};
+
 		static GLuint create_program(const char *vertexshader_source,
 					     const char *fragmentshader_source);
 
@@ -69,6 +67,8 @@ namespace gnuVG {
 		static const Shader* get_shader(int capabilities);
 
 		void use_shader() const;
+
+		void set_blending(Blending bmode) const;
 
 		void set_matrix(GLfloat *mtrx) const;
 		void set_pre_translation(GLfloat *ptrans) const;

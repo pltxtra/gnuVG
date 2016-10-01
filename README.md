@@ -68,6 +68,7 @@ gnuVG is only a partial implementation of the OpenVG API.
   * Callable - no effect
 * vgSet/Get*() - The following are supported:
   * VG_MATRIX_MODE
+  * VG_BLEND_MODE - only VG_BLEND_SRC and VG_BLEND_SRC_OVER are supported
   * VG_SCISSOR_RECTS
   * VG_STROKE_LINE_WIDTH
   * VG_STROKE_JOIN_STYLE - VG_JOIN_ROUND is forced to VG_JOIN_BEVEL
@@ -82,7 +83,6 @@ gnuVG is only a partial implementation of the OpenVG API.
   * VG_FILL_RULE - Always VG_EVEN_ODD
   * VG_IMAGE_QUALITY - Always VG_IMAGE_QUALITY_BETTER
   * VG_RENDERING_QUALITY - Always VG_RENDERING_QUALITY_BETTER
-  * VG_BLEND_MODE
   * VG_IMAGE_MODE - Always VG_DRAW_IMAGE_NORMAL
   * VG_MASKING
   * VG_COLOR_TRANSFORM_VALUES
