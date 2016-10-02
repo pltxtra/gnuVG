@@ -1336,6 +1336,26 @@ namespace gnuVG {
 						 VGImageFormat fmt,
 						 VGint x, VGint y,
 						 VGint width, VGint height) {
+		if(dst == &screen_buffer) {
+			GNUVG_ERROR("Trying to write from memory directly to the screen buffer.\n");
+			return; /* can't copy directly to framebuffer */
+		}
+
+		if(fmt != VG_sRGBA_8888) {
+			GNUVG_ERROR("Only VG_sRGBA_8888 is supported currently.\n");
+			return;
+		}
+
+		if(stride != 0) {
+			GNUVG_ERROR("stride not supported for copying memory to and from an image.\n");
+			return;
+		}
+
+		glTexImage2D(dst->texture,
+			     0,
+			     x, y, width, height,
+			     GL_RGBA, GL_UNSIGNED_BYTE,
+			     memory);
 	}
 
 	void Context::save_current_framebuffer() {

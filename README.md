@@ -126,7 +126,11 @@ gnuVG is only a partial implementation of the OpenVG API.
   * vgPathLength()
   * vgPointAlongPath()
 * Paint - everything supported, except patterns and premultiplied color ramps.
-* Images - partially implemented, but not supported yet.
+* Images - partially implemented, but not supported yet:
+  * vgCreateImage - only VG_sRGBA_8888 and VG_IMAGE_QUALITY_BETTER
+  * vgDestroyImage
+  * vgClearImage
+  * vgImageSubData - only VG_sRGBA_8888 and stride = 0
 * Text - glyph rendering using paths supported, not images.
 * Image filters - not implemented
 * Blending - not implemented
