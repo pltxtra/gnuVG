@@ -1355,6 +1355,7 @@ namespace gnuVG {
 			     GL_RGBA, w, h, 0,
 			     GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4,
 			     NULL);
+		checkGlError("::create_framebuffer - glTexImage2D");
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -1450,11 +1451,17 @@ namespace gnuVG {
 			return;
 		}
 
-		glTexImage2D(dst->texture,
-			     0,
-			     x, y, width, height,
-			     GL_RGBA, GL_UNSIGNED_BYTE,
-			     memory);
+		checkGlError("::copy_memory_to_framebuffer - glTexSubImage2D (before)");
+		GNUVG_ERROR("glTexSubImage2D(%d, 0, %d, %d, %d, %d, %d, %d, %p)\n",
+			    dst->texture, x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE,
+			    memory);
+		glBindTexture(GL_TEXTURE_2D, dst->texture);
+		glTexSubImage2D(GL_TEXTURE_2D,
+				0,
+				x, y, width, height,
+				GL_RGBA, GL_UNSIGNED_BYTE,
+				memory);
+		checkGlError("::copy_memory_to_framebuffer - glTexSubImage2D");
 	}
 
 	void Context::save_current_framebuffer() {
