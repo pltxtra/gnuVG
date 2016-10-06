@@ -26,7 +26,7 @@ namespace gnuVG {
 	Image::Image(Context* ctx, VGImageFormat format,
 		     VGint width, VGint height,
 		     VGbitfield allowedQuality) {
-		if(ctx->create_framebuffer(&framebuffer, format, width, height, allowedQuality))
+		if(!ctx->create_framebuffer(&framebuffer, format, width, height, allowedQuality))
 			throw FailedToCreateImageException();
 	}
 
