@@ -20,7 +20,7 @@
 /*
  * This file is partially derivate work. The following is the copyright notice
  * of the original contents. (This pertains only to the original work, the derivate
- * work is licensed using GPL version 3 or later.)
+ * work is licensed using LGPL version 3 or later.)
  *
  * Copyright (C) 2004, 2006, 2007 Apple Inc.  All rights reserved.
  * Copyright (C) 2005 Nokia.  All rights reserved.
