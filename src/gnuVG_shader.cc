@@ -341,13 +341,6 @@ namespace gnuVG {
 		return shader;
 	}
 
-	static void checkGlError(const char* op) {
-		for (GLint error = glGetError(); error; error
-			     = glGetError()) {
-			GNUVG_ERROR("after %s() glError (0x%x)\n", op, error);
-		}
-	}
-
 	GLuint Shader::create_program(const char *vertexshader_source, const char *fragmentshader_source) {
 		GLuint vertexShader = compile_shader(GL_VERTEX_SHADER, vertexshader_source);
 		if (!vertexShader)
@@ -360,9 +353,9 @@ namespace gnuVG {
 		GLuint program = glCreateProgram();
 		if (program) {
 			glAttachShader(program, vertexShader);
-			checkGlError("glAttachShader");
+			checkGlError("glAttachShader - vertex shader");
 			glAttachShader(program, pixelShader);
-			checkGlError("glAttachShader");
+			checkGlError("glAttachShader - fragment shader");
 			glLinkProgram(program);
 			GLint linkStatus = GL_FALSE;
 			glGetProgramiv(program, GL_LINK_STATUS, &linkStatus);

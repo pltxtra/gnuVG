@@ -59,3 +59,11 @@
 #define GNUVG_ERROR(...)  printf(__VA_ARGS__)
 
 #endif
+
+#include <GLES2/gl2.h>
+static inline void checkGlError(const char* op) {
+	for (GLint error = glGetError(); error; error
+		     = glGetError()) {
+		GNUVG_ERROR("after %s() glError (0x%x)\n", op, error);
+	}
+}
