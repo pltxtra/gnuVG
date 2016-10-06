@@ -833,9 +833,6 @@ namespace gnuVG {
 				glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 			}
 		}
-
-		// return to previous framebuffer and pipeline
-		use_pipeline(active_pipeline, pipeline_mode);
 	}
 
 	void Context::recreate_buffers() {
@@ -887,6 +884,53 @@ namespace gnuVG {
 		vgSeti(VG_BLEND_MODE, old_blend); // Restore blend mode
 	}
 
+	void Context::trivial_render_framebuffer(const FrameBuffer* framebuffer) {
+
+		GLfloat mat[] = {
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f
+		};
+
+		active_shader = Shader::get_shader(
+			Shader::do_pattern
+			);
+		active_shader->use_shader();
+		active_shader->set_blending(blend_mode);
+		active_shader->set_matrix(mat);
+
+		prepare_image_matrix();
+		active_shader->set_pattern_texture(framebuffer->texture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		active_shader->set_pattern_matrix(image_matrix_data);
+
+		auto w = framebuffer->width;
+		auto h = framebuffer->height;
+
+		// calculate corners of image
+		auto c1 = final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].map_point(Point(0.0f, 0.0f));
+		auto c2 = final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].map_point(Point(0.0f,    h));
+		auto c3 = final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].map_point(Point(   w,    h));
+		auto c4 = final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].map_point(Point(   w, 0.0f));
+
+		GLfloat vertices[] = {
+			c1.x, c1.y,
+			c2.x, c2.y,
+			c3.x, c3.y,
+			c4.x, c4.y,
+		};
+
+		GLuint indices[] = {
+			0, 1, 2,
+			0, 2, 3
+		};
+
+		active_shader->load_2dvertex_array(vertices, 0);
+		active_shader->render_elements(indices, 6);
+	}
+
 	void Context::trivial_render_elements(
 		GLfloat *vertices, GLuint *indices, GLsizei indices_count,
 		VGfloat r, VGfloat g, VGfloat b, VGfloat a) {
@@ -910,8 +954,6 @@ namespace gnuVG {
 		active_shader->set_color(col);
 		active_shader->load_2dvertex_array(vertices, 0);
 		active_shader->render_elements(indices, indices_count);
-
-		use_pipeline(active_pipeline, pipeline_mode);
 	}
 
 	void Context::trivial_fill_area(
