@@ -382,7 +382,7 @@ extern "C" {
 		auto p = Object::get<Paint>(paint);
 		auto i = Object::get<Image>(pattern);
 
-		if(p && i)
+		if(p)
 			p->vgPaintPattern(i);
 	}
 }

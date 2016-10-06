@@ -21,6 +21,7 @@
 
 #include "gnuVG_context.hh"
 #include "gnuVG_config.hh"
+#include "gnuVG_image.hh"
 
 //#define __DO_GNUVG_DEBUG
 #include "gnuVG_debug.hh"
@@ -980,6 +981,29 @@ namespace gnuVG {
 		trivial_render_elements(vertices, indices, 6, r, g, b, a);
 	}
 
+	void Context::prepare_image_matrix() {
+		if(!matrix_is_dirty[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE])
+			return;
+
+		matrix_is_dirty[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE] = false;
+
+		/* calculate final inverted matrix */
+		final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].multiply(
+			screen_matrix,
+			matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE]);
+		final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].invert();
+
+		/* Convert to OpenGL friendly format */
+		Matrix *m = &final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE];
+		GLfloat mat[] = {
+			m->a, m->b, 0.0f, 0.0f,
+			m->d, m->e, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			m->g, m->h, 0.0f, 1.0f
+		};
+		memcpy(image_matrix_data, mat, sizeof(mat));
+	}
+
 	void Context::select_conversion_matrix(MatrixMode _conversion_matrix) {
 		if(conversion_matrix != _conversion_matrix ||
 		   matrix_is_dirty[_conversion_matrix] ||
@@ -1058,9 +1082,13 @@ namespace gnuVG {
 		bool gradient_enabled = false;
 		switch(active_paint->ptype) {
 		case VG_PAINT_TYPE_COLOR:
-		case VG_PAINT_TYPE_PATTERN:
 		case VG_PAINT_TYPE_FORCE_SIZE:
 			break;
+
+		case VG_PAINT_TYPE_PATTERN:
+			caps |= Shader::do_pattern;
+			break;
+
 		case VG_PAINT_TYPE_LINEAR_GRADIENT:
 			caps |= Shader::do_linear_gradient;
 			gradient_enabled = true;
@@ -1121,8 +1149,37 @@ namespace gnuVG {
 
 		switch(active_paint->ptype) {
 		case VG_PAINT_TYPE_FORCE_SIZE:
-		case VG_PAINT_TYPE_PATTERN:
 			break;
+
+		case VG_PAINT_TYPE_PATTERN:
+			if(active_paint->pattern) {
+				prepare_image_matrix();
+				auto ptf = active_paint->pattern->get_framebuffer();
+				active_shader->set_pattern_texture(ptf->texture);
+
+				GLint wrap_mode = GL_CLAMP_TO_EDGE;
+				switch(active_paint->tiling_mode) {
+				case VG_TILING_MODE_FORCE_SIZE: // for compiler warning elimination
+				case VG_TILE_FILL: // not supported - implement as PAD
+				case VG_TILE_PAD:
+					wrap_mode = GL_CLAMP_TO_EDGE;
+					break;
+
+				case VG_TILE_REPEAT:
+					wrap_mode = GL_REPEAT;
+					break;
+
+				case VG_TILE_REFLECT:
+					wrap_mode = GL_MIRRORED_REPEAT;
+					break;
+				}
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_mode);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_mode);
+
+				active_shader->set_pattern_matrix(image_matrix_data);
+			}
+			break;
+
 		case VG_PAINT_TYPE_COLOR:
 			active_shader->set_color(active_paint->color.c);
 			return;

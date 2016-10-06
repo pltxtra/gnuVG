@@ -76,6 +76,8 @@ namespace gnuVG {
 		void set_surf2paint_matrix(GLfloat *s2p_matrix) const;
 
 		void set_mask_texture(GLuint tex) const;
+
+		void set_pattern_matrix(GLfloat *mtrx) const;
 		void set_pattern_texture(GLuint tex) const;
 
 		void set_color(GLfloat *clr) const;
@@ -103,7 +105,9 @@ namespace gnuVG {
 		GLint Matrix;
 		GLint preTranslation;
 
-		GLint maskTexture, patternTexture;
+		GLint maskTexture;
+
+		GLint patternTexture, patternMatrix;
 
 		GLint surf2paint;
 

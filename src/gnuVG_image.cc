@@ -97,6 +97,9 @@ namespace gnuVG {
 	}
 
 	void Image::vgDrawImage() {
+		auto ctx = Context::get_current();
+		if(ctx)
+			ctx->trivial_render_framebuffer(&framebuffer);
 	}
 
 	void Image::vgSetPixels(VGint dx, VGint dy,
@@ -265,6 +268,9 @@ extern "C" {
 	}
 
 	void VG_API_ENTRY vgDrawImage(VGImage image) VG_API_EXIT {
+		auto i = Object::get<Image>(image);
+		if(i)
+			i->vgDrawImage();
 	}
 
 	void VG_API_ENTRY vgSetPixels(VGint dx, VGint dy,

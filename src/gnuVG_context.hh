@@ -85,6 +85,7 @@ namespace gnuVG {
 		// this is the product of screen_matrix and matrix[current_matrix]
 		Matrix final_matrix[GNUVG_MATRIX_MAX];
 		bool matrix_is_dirty[GNUVG_MATRIX_MAX];
+		GLfloat image_matrix_data[16]; // inverted IMAGE_USER_TO_SURFACE stored in 4d GL friendly matrix
 		GLfloat conversion_matrix_data[16]; // final_matrix stored in 4d GL friendly matrix
 		GLfloat surf2fill_matrix_data[16]; // surface2fill matrix stored in 4d GL friendly matrix
 		GLfloat surf2stroke_matrix_data[16]; // surface2stroke matrix stored in 4d GL friendly matrix
@@ -159,6 +160,8 @@ namespace gnuVG {
 		void trivial_fill_area(
 			VGint x, VGint y, VGint width, VGint height,
 			VGfloat r, VGfloat g, VGfloat b, VGfloat a);
+		void trivial_render_framebuffer(const FrameBuffer* framebuffer);
+		void prepare_image_matrix();
 		void select_conversion_matrix(MatrixMode conversion_matrix);
 		void use_pipeline(gnuVGPipeline new_pipeline, VGPaintMode new_mode);
 		void reset_pre_translation();

@@ -87,6 +87,10 @@ namespace gnuVG {
 		glUniform1i(maskTexture, 1);
 	}
 
+	void Shader::set_pattern_matrix(GLfloat *mtrx) const {
+		glUniformMatrix4fv(patternMatrix, 1, GL_FALSE, mtrx);
+	}
+
 	void Shader::set_pattern_texture(GLuint tex) const {
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, tex);
@@ -163,6 +167,12 @@ namespace gnuVG {
 				"varying vec2 v_textureCoord;\n"
 				;
 
+		if((caps & primary_mode_mask) == do_pattern)
+			vshad <<
+				"uniform mat4 p_projection;\n"
+				"varying vec2 p_textureCoord;\n"
+				;
+
 		if(caps & gradient_spread_mask)
 			vshad <<
 				"varying vec2 gradient_coord;\n";
@@ -181,6 +191,11 @@ namespace gnuVG {
 		if(caps & do_mask)
 			vshad <<
 				"  v_textureCoord = vec2(gl_Position.x * 0.5 + 0.5, gl_Position.y * 0.5 + 0.5);\n"
+				;
+
+		if((caps & primary_mode_mask) == do_pattern)
+			vshad <<
+				"  p_textureCoord = p_projection * gl_Position;\n"
 				;
 
 		if(caps & gradient_spread_mask)
@@ -239,9 +254,10 @@ namespace gnuVG {
 					"uniform float radial_denom;\n"  // 1 / (r^2 − (fx'^2 + fy'^2))
 					;
 			}
-		} else if(primary_mode == do_pattern) {
-			/* not implemented */
-		}
+		} else if(primary_mode == do_pattern)
+			fshad <<
+				"varying vec2 p_textureCoord;\n"
+				"uniform sampler2D p_texture;\n";
 
 		fshad << "void main() {\n";
 
@@ -300,6 +316,11 @@ namespace gnuVG {
 				"    }\n"
 				"    previous_color = stop_colors[i];\n"
 				"  }\n";
+			break;
+
+		case do_pattern:
+			fshad <<
+				"  vec4 c = texture2D( p_texture, v_textureCoord.xy );\n";
 			break;
 		}
 
@@ -395,7 +416,9 @@ namespace gnuVG {
 		preTranslation = glGetUniformLocation(program_id, "pre_translation");
 
 		maskTexture = glGetUniformLocation(program_id , "m_texture" );
+
 		patternTexture = glGetUniformLocation(program_id , "p_texture" );
+		patternMatrix = glGetUniformLocation(program_id, "p_projection");
 
 		surf2paint = glGetUniformLocation(program_id, "surf2paint");
 
