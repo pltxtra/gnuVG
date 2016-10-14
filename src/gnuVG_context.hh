@@ -70,7 +70,7 @@ namespace gnuVG {
 		gnuVGPipeline active_pipeline;
 		VGPaintMode pipeline_mode;
 
-		Shader::Blending blend_mode;
+		Shader::Blending blend_mode = Shader::blend_src_over;
 
 		static Context *current_context;
 
