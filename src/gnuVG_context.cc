@@ -17,6 +17,7 @@
  *
  */
 
+#include <limits>
 #include <VG/openvg.h>
 
 #include "gnuVG_context.hh"
@@ -594,6 +595,9 @@ namespace gnuVG {
 			break;
 
 			/* Implementation limits (read-only) */
+		case VG_MAX_FLOAT:
+			return std::numeric_limits<VGfloat>::max();
+
 		case VG_MAX_DASH_COUNT:
 		case VG_MAX_KERNEL_SIZE:
 		case VG_MAX_SEPARABLE_KERNEL_SIZE:
@@ -601,7 +605,6 @@ namespace gnuVG {
 		case VG_MAX_IMAGE_HEIGHT:
 		case VG_MAX_IMAGE_PIXELS:
 		case VG_MAX_IMAGE_BYTES:
-		case VG_MAX_FLOAT:
 		case VG_MAX_GAUSSIAN_STD_DEVIATION:
 			break;
 		}

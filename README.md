@@ -69,6 +69,10 @@ gnuVG is only a partial implementation of the OpenVG API.
 * vgSet/Get*() - The following are supported:
   * VG_MATRIX_MODE
   * VG_BLEND_MODE - only VG_BLEND_SRC and VG_BLEND_SRC_OVER are supported
+  * VG_MAX_COLOR_RAMP_STOPS
+  * VG_MAX_DASH_COUNT
+  * VG_MAX_FLOAT
+  * VG_MAX_SCISSOR_RECTS
   * VG_SCISSOR_RECTS
   * VG_STROKE_LINE_WIDTH
   * VG_STROKE_JOIN_STYLE - VG_JOIN_ROUND is forced to VG_JOIN_BEVEL
@@ -92,17 +96,13 @@ gnuVG is only a partial implementation of the OpenVG API.
   * VG_FILTER_FORMAT_LINEAR
   * VG_FILTER_FORMAT_PREMULTIPLIED
   * VG_FILTER_CHANNEL_MASK
-  * VG_MAX_SCISSOR_RECTS
-  * VG_MAX_DASH_COUNT
   * VG_MAX_KERNEL_SIZE
   * VG_MAX_SEPARABLE_KERNEL_SIZE
   * VG_MAX_GAUSSIAN_STD_DEVIATION
-  * VG_MAX_COLOR_RAMP_STOPS
   * VG_MAX_IMAGE_WIDTH
   * VG_MAX_IMAGE_HEIGHT
   * VG_MAX_IMAGE_PIXELS
   * VG_MAX_IMAGE_BYTES
-  * VG_MAX_FLOAT
 * All matrix operations
 * Masking - Non-supported
   * vgMask() - Partially implemented, mask parameter not supported, only VG_CLEAR/FILL_MASK
