@@ -58,6 +58,9 @@ namespace gnuVG {
 
 	void Context::set_current(Context *ctx) {
 		current_context = ctx;
+
+		for(auto k = 0; k < GNUVG_MATRIX_MAX; k++)
+			ctx->matrix_is_dirty[k] = true;
 	}
 
 	void Context::set_error(VGErrorCode new_error) {
@@ -901,20 +904,25 @@ namespace gnuVG {
 		active_shader->set_blending(blend_mode);
 		active_shader->set_matrix(mat);
 
-		prepare_image_matrix();
+		prepare_framebuffer_matrix(framebuffer);
 		active_shader->set_pattern_texture(framebuffer->texture);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		active_shader->set_pattern_matrix(image_matrix_data);
 
-		auto w = framebuffer->width;
-		auto h = framebuffer->height;
+		auto w = (VGfloat)framebuffer->width;
+		auto h = (VGfloat)framebuffer->height;
 
 		// calculate corners of image
-		auto c1 = final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].map_point(Point(0.0f, 0.0f));
-		auto c2 = final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].map_point(Point(0.0f,    h));
-		auto c3 = final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].map_point(Point(   w,    h));
-		auto c4 = final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].map_point(Point(   w, 0.0f));
+		auto c1_p = matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].map_point(Point(0.0f, 0.0f));
+		auto c2_p = matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].map_point(Point(0.0f,    h));
+		auto c3_p = matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].map_point(Point(   w,    h));
+		auto c4_p = matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].map_point(Point(   w, 0.0f));
+
+		auto c1 = screen_matrix.map_point(c1_p);
+		auto c2 = screen_matrix.map_point(c2_p);
+		auto c3 = screen_matrix.map_point(c3_p);
+		auto c4 = screen_matrix.map_point(c4_p);
 
 		GLfloat vertices[] = {
 			c1.x, c1.y,
@@ -981,26 +989,32 @@ namespace gnuVG {
 		trivial_render_elements(vertices, indices, 6, r, g, b, a);
 	}
 
-	void Context::prepare_image_matrix() {
-		if(!matrix_is_dirty[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE])
-			return;
+	void Context::prepare_framebuffer_matrix(const FrameBuffer* fbuf) {
+		/* if dirty - calculate final matrix */
+		if(matrix_is_dirty[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE]) {
+			matrix_is_dirty[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE] = false;
 
-		matrix_is_dirty[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE] = false;
+			final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].multiply(
+				screen_matrix,
+				matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE]);
+		}
 
-		/* calculate final inverted matrix */
-		final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].multiply(
-			screen_matrix,
-			matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE]);
-		final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].invert();
+		/* Create matrix to convert from final on-screen OpenGL
+		 * coordinates back to texture space coordinates.
+		 */
+		Matrix temp_a, temp_b;
+		temp_a.scale(fbuf->width, fbuf->height);
+		temp_b.multiply(final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE], temp_a);
+		temp_b.invert();
 
 		/* Convert to OpenGL friendly format */
-		Matrix *m = &final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE];
 		GLfloat mat[] = {
-			m->a, m->b, 0.0f, 0.0f,
-			m->d, m->e, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			m->g, m->h, 0.0f, 1.0f
+			temp_b.a, temp_b.b, 0.0f, temp_b.c,
+			temp_b.d, temp_b.e, 0.0f, temp_b.f,
+			0.0f,     0.0f,     1.0f, 0.0f,
+			temp_b.g, temp_b.h, 0.0f, temp_b.i
 		};
+
 		memcpy(image_matrix_data, mat, sizeof(mat));
 	}
 
@@ -1153,8 +1167,8 @@ namespace gnuVG {
 
 		case VG_PAINT_TYPE_PATTERN:
 			if(active_paint->pattern) {
-				prepare_image_matrix();
 				auto ptf = active_paint->pattern->get_framebuffer();
+				prepare_framebuffer_matrix(ptf);
 				active_shader->set_pattern_texture(ptf->texture);
 
 				GLint wrap_mode = GL_CLAMP_TO_EDGE;

@@ -161,7 +161,7 @@ namespace gnuVG {
 			VGint x, VGint y, VGint width, VGint height,
 			VGfloat r, VGfloat g, VGfloat b, VGfloat a);
 		void trivial_render_framebuffer(const FrameBuffer* framebuffer);
-		void prepare_image_matrix();
+		void prepare_framebuffer_matrix(const FrameBuffer* frbuf);
 		void select_conversion_matrix(MatrixMode conversion_matrix);
 		void use_pipeline(gnuVGPipeline new_pipeline, VGPaintMode new_mode);
 		void reset_pre_translation();

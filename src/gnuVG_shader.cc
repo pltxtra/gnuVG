@@ -170,7 +170,7 @@ namespace gnuVG {
 		if((caps & primary_mode_mask) == do_pattern)
 			vshad <<
 				"uniform mat4 p_projection;\n"
-				"varying vec2 p_textureCoord;\n"
+				"varying vec4 p_textureCoord;\n"
 				;
 
 		if(caps & gradient_spread_mask)
@@ -195,7 +195,7 @@ namespace gnuVG {
 
 		if((caps & primary_mode_mask) == do_pattern)
 			vshad <<
-				"  p_textureCoord = p_projection * gl_Position;\n"
+				"  p_textureCoord = p_projection * vec4(gl_Position.xy, 0.0, 1.0);\n"
 				;
 
 		if(caps & gradient_spread_mask)
@@ -256,7 +256,7 @@ namespace gnuVG {
 			}
 		} else if(primary_mode == do_pattern)
 			fshad <<
-				"varying vec2 p_textureCoord;\n"
+				"varying vec4 p_textureCoord;\n"
 				"uniform sampler2D p_texture;\n";
 
 		fshad << "void main() {\n";
@@ -320,7 +320,7 @@ namespace gnuVG {
 
 		case do_pattern:
 			fshad <<
-				"  vec4 c = texture2D( p_texture, v_textureCoord.xy );\n";
+				"  vec4 c = texture2D( p_texture, p_textureCoord.xy );\n";
 			break;
 		}
 

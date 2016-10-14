@@ -53,6 +53,9 @@
 #include <VG/openvg.h>
 
 #include <math.h>
+#include <string>
+
+#include "gnuVG_error.hh"
 
 #define GNUVG_CLAMP(v,min,max) ((v < min) ? min : ((v > max) ? max : v))
 #define GNUVG_DEG_TO_RAD(d) (d * (M_PI / 180.0f))
@@ -186,6 +189,17 @@ namespace gnuVG {
 		VGfloat a, d, g,
 			b, e, h,
 			c, f, i;
+
+		inline void print_matrix(const std::string &topic) {
+			GNUVG_ERROR("---- mat for %s\n"
+				    "     m = [%f, %f, %f;\\\n"
+				    "          %f, %f, %f;\\\n"
+				    "          %f, %f, %f]\n",
+				    topic.c_str(),
+				    a, d, g,
+				    b, e, h,
+				    c, f, i);
+		}
 
 		Matrix();
 		Matrix(
