@@ -126,14 +126,15 @@ gnuVG is only a partial implementation of the OpenVG API.
   * vgPathLength()
   * vgPointAlongPath()
 * Paint - everything supported, except patterns and premultiplied color ramps.
-* Images - partially implemented, but not supported yet:
+* Images - partially supported
   * vgCreateImage - only VG_sRGBA_8888 and VG_IMAGE_QUALITY_BETTER
   * vgDestroyImage
   * vgClearImage
   * vgImageSubData - only VG_sRGBA_8888 and stride = 0
+  * vgDrawImage
 * Text - glyph rendering using paths supported, not images.
 * Image filters - not implemented
-* Blending - not implemented
+* Blending - only VG_BLEND_SRC and VG_BLEND_SRC_OVER
 * VGU - supported
 
 ## Using gnuVG in your program
@@ -144,7 +145,7 @@ context must be created before you can call any of the API:s.
 ```
 VGHandle gnuvgCreateContext();  // Creates a new gnuVG context, and returns a handle
 void gnuvgDestroyContext(VGHandle context); // Destroys a previously created context
-void gnuvgUseContext(VGHandle context); // Indicate to gnuVG which context to use
+void gnuvgUseContext(VGHandle context); // Indicate to gnuVG which context to use (call for each frame)
 void gnuvgResize(VGint pixel_width, VGint pixel_height); // Must be called to set the pixel size
 ```
 
