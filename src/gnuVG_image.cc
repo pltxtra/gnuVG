@@ -208,7 +208,7 @@ extern "C" {
 		Object::dereference(image);
 	}
 
-	void VG_API_ENTRY gnuVG_render_to_image(VGImage image) VG_API_EXIT {
+	void VG_API_ENTRY gnuvgRenderToImage(VGImage image) VG_API_EXIT {
 		auto i = Object::get<Image>(image);
 		if(i)
 			Context::get_current()->render_to_framebuffer(i->get_framebuffer());
