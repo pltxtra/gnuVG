@@ -26,38 +26,46 @@
 namespace gnuVG {
 	class Shader {
 	public:
+		enum Values {
+			gauss_krn_diameter_shift = 16,
+		};
 		enum Capabilities {
 			// primary mode
-			do_flat_color		= 0x0000,
-			do_linear_gradient	= 0x0001,
-			do_radial_gradient	= 0x0002,
-			do_pattern		= 0x0003,
+			do_flat_color		= 0x00000000,
+			do_linear_gradient	= 0x00000001,
+			do_radial_gradient	= 0x00000002,
+			do_pattern		= 0x00000003,
 
-			primary_mode_mask	= 0x000f,
+			primary_mode_mask	= 0x0000000f,
 
 			// gradient spread mode
-			do_gradient_pad		= 0x0010,
-			do_gradient_repeat	= 0x0020,
-			do_gradient_reflect	= 0x0030,
+			do_gradient_pad		= 0x00000010,
+			do_gradient_repeat	= 0x00000020,
+			do_gradient_reflect	= 0x00000030,
 
-			gradient_spread_mask	= 0x0030,
+			gradient_spread_mask	= 0x00000030,
 
 			// additional flags
-			do_mask			= 0x0100,
-			do_pretranslate		= 0x0400
+			do_mask			= 0x00000100,
+			do_pretranslate		= 0x00000200,
+			do_horizontal_gaussian	= 0x00000400,
+			do_vertical_gaussian	= 0x00000800,
+
+			// gaussian kernel configuration
+			gauss_krn_diameter_mask = 0x00ff0000,
 		};
 
 		enum Blending {
-			blend_src_over      	= 0x0000, // default
-			blend_src		= 0x1000,
-			blend_dst_over      	= 0x2000,
-			blend_src_in      	= 0x3000,
-			blend_dst_in      	= 0x4000,
-			blend_multiply      	= 0x5000,
-			blend_screen      	= 0x6000,
-			blend_darken      	= 0x7000,
-			blend_lighten      	= 0x8000,
-			blend_additive      	= 0x9000
+			blend_src_over      	= 0x00000000, // default
+			blend_src		= 0x00001000,
+			blend_dst_over      	= 0x00002000,
+			blend_src_in      	= 0x00003000,
+			blend_dst_in      	= 0x00004000,
+			blend_multiply      	= 0x00005000,
+			blend_screen      	= 0x00006000,
+			blend_darken      	= 0x00007000,
+			blend_lighten      	= 0x00008000,
+			blend_additive      	= 0x00009000
 		};
 
 		static GLuint create_program(const char *vertexshader_source,
@@ -70,23 +78,24 @@ namespace gnuVG {
 
 		void set_blending(Blending bmode) const;
 
-		void set_matrix(GLfloat *mtrx) const;
-		void set_pre_translation(GLfloat *ptrans) const;
+		void set_matrix(const GLfloat *mtrx) const;
+		void set_pre_translation(const GLfloat *ptrans) const;
 
-		void set_surf2paint_matrix(GLfloat *s2p_matrix) const;
+		void set_surf2paint_matrix(const GLfloat *s2p_matrix) const;
 
 		void set_mask_texture(GLuint tex) const;
 
-		void set_pattern_matrix(GLfloat *mtrx) const;
+		void set_pattern_size(GLint width_in_pixels, GLint height_in_pixels) const;
+		void set_pattern_matrix(const GLfloat *mtrx) const;
 		void set_pattern_texture(GLuint tex) const;
 
-		void set_color(GLfloat *clr) const;
-		void set_linear_parameters(GLfloat *vec) const;
-		void set_radial_parameters(GLfloat *vec) const;
+		void set_color(const GLfloat *clr) const;
+		void set_linear_parameters(const GLfloat *vec) const;
+		void set_radial_parameters(const GLfloat *vec) const;
 		void set_color_ramp(GLuint max_stops,
-				    GLfloat *offsets,
-				    GLfloat *invfactor,
-				    GLfloat *colors) const;
+				    const GLfloat *offsets,
+				    const GLfloat *invfactor,
+				    const GLfloat *colors) const;
 
 		void load_2dvertex_array(const GLfloat *verts, GLint stride) const;
 		void load_klm_array(const GLfloat *klm, GLint stride) const;
@@ -96,9 +105,11 @@ namespace gnuVG {
 	private:
 		static std::map<int, Shader*> shader_library;
 
-		std::string vertex_shader, fragment_shader;
+		GLfloat pixel_width, pixel_height;
+
 		GLuint program_id;
 
+		/* shader handles */
 		GLint position_handle, klm_handle;
 
 		GLint ColorHandle;
@@ -107,6 +118,7 @@ namespace gnuVG {
 
 		GLint maskTexture;
 
+		GLint pxl_sizes;
 		GLint patternTexture, patternMatrix;
 
 		GLint surf2paint;
@@ -126,7 +138,10 @@ namespace gnuVG {
 
 		Shader(int caps);
 
-		void build_vertex_shader(int caps);
-		void build_fragment_shader(int caps);
+		std::string build_vertex_shader(int caps);
+		std::string build_fragment_shader(int caps);
+
+		void create_primary_shader(int caps);
+		void create_secondary_shader(int caps);
 	};
 };

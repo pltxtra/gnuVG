@@ -892,27 +892,6 @@ namespace gnuVG {
 	}
 
 	void Context::trivial_render_framebuffer(const FrameBuffer* framebuffer) {
-
-		GLfloat mat[] = {
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f
-		};
-
-		active_shader = Shader::get_shader(
-			Shader::do_pattern
-			);
-		active_shader->use_shader();
-		active_shader->set_blending(blend_mode);
-		active_shader->set_matrix(mat);
-
-		prepare_framebuffer_matrix(framebuffer);
-		active_shader->set_pattern_texture(framebuffer->texture);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		active_shader->set_pattern_matrix(image_matrix_data);
-
 		auto w = (VGfloat)framebuffer->width;
 		auto h = (VGfloat)framebuffer->height;
 
@@ -927,6 +906,13 @@ namespace gnuVG {
 		auto c3 = screen_matrix.map_point(c3_p);
 		auto c4 = screen_matrix.map_point(c4_p);
 
+		GLfloat mat[] = {
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f
+		};
+
 		GLfloat vertices[] = {
 			c1.x, c1.y,
 			c2.x, c2.y,
@@ -939,8 +925,35 @@ namespace gnuVG {
 			0, 2, 3
 		};
 
-		active_shader->load_2dvertex_array(vertices, 0);
-		active_shader->render_elements(indices, 6);
+		auto f = [this, framebuffer, mat, vertices, indices]
+			(bool do_horizontal_gauss, int kern_diameter) {
+			int caps = Shader::do_pattern;
+			if(kern_diameter > 1) {
+				caps |= do_horizontal_gauss ?
+					Shader::do_horizontal_gaussian :
+					Shader::do_vertical_gaussian;
+				caps |= (kern_diameter << Shader::gauss_krn_diameter_shift) &
+					Shader::gauss_krn_diameter_mask;
+			}
+
+			active_shader = Shader::get_shader(
+				caps
+				);
+			active_shader->use_shader();
+			active_shader->set_blending(blend_mode);
+			active_shader->set_matrix(mat);
+
+			prepare_framebuffer_matrix(framebuffer);
+			active_shader->set_pattern_texture(framebuffer->texture);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			active_shader->set_pattern_matrix(image_matrix_data);
+			active_shader->set_pattern_size(framebuffer->width, framebuffer->height);
+
+			active_shader->load_2dvertex_array(vertices, 0);
+			active_shader->render_elements(indices, 6);
+		};
+		f(false, 1);
 	}
 
 	void Context::trivial_render_elements(

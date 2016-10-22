@@ -26,6 +26,8 @@
 #define ENABLE_GNUVG_PROFILER
 #include <VG/gnuVG_profiler.hh>
 
+#include "gnuVG_gaussianblur.hh"
+
 namespace gnuVG {
 	std::map<int, Shader*> Shader::shader_library;
 
@@ -69,15 +71,15 @@ namespace gnuVG {
 		}
 	}
 
-	void Shader::set_matrix(GLfloat *mtrx) const {
+	void Shader::set_matrix(const GLfloat *mtrx) const {
 		glUniformMatrix4fv(Matrix, 1, GL_FALSE, mtrx);
 	}
 
-	void Shader::set_pre_translation(GLfloat *ptrans) const {
+	void Shader::set_pre_translation(const GLfloat *ptrans) const {
 		glUniform2fv(preTranslation, 1, ptrans);
 	}
 
-	void Shader::set_surf2paint_matrix(GLfloat *s2p_matrix) const {
+	void Shader::set_surf2paint_matrix(const GLfloat *s2p_matrix) const {
 		glUniformMatrix4fv(surf2paint, 1, GL_FALSE, s2p_matrix);
 	}
 
@@ -87,7 +89,21 @@ namespace gnuVG {
 		glUniform1i(maskTexture, 1);
 	}
 
-	void Shader::set_pattern_matrix(GLfloat *mtrx) const {
+	void Shader::set_pattern_size(GLint width_in_pixels, GLint height_in_pixels) const {
+		auto pixel_width = (GLfloat)1.0 / (GLfloat)width_in_pixels;
+		auto pixel_height = (GLfloat)1.0 / (GLfloat)height_in_pixels;
+
+		GLfloat pxs[] = {
+			pixel_width,
+			pixel_height,
+			pixel_width * (GLfloat)0.5,
+			pixel_height * (GLfloat)0.5
+		};
+
+		glUniform4fv(pxl_sizes, 1, pxs);
+	}
+
+	void Shader::set_pattern_matrix(const GLfloat *mtrx) const {
 		glUniformMatrix4fv(patternMatrix, 1, GL_FALSE, mtrx);
 	}
 
@@ -97,26 +113,26 @@ namespace gnuVG {
 		glUniform1i(patternTexture, 2);
 	}
 
-	void Shader::set_color(GLfloat *clr) const {
+	void Shader::set_color(const GLfloat *clr) const {
 		glUniform4fv(ColorHandle, 1, clr);
 	}
 
-	void Shader::set_linear_parameters(GLfloat *vec) const {
+	void Shader::set_linear_parameters(const GLfloat *vec) const {
 		glUniform2fv(linear_start, 1, &(vec[0]));
 		glUniform2fv(linear_normal, 1, &(vec[2]));
 		glUniform1fv(linear_length, 1, &(vec[4]));
 	}
 
-	void Shader::set_radial_parameters(GLfloat *vec) const {
+	void Shader::set_radial_parameters(const GLfloat *vec) const {
 		glUniform4fv(radial, 1, &(vec[0]));
 		glUniform1fv(radius2, 1, &(vec[4]));
 		glUniform1fv(radial_denom, 1, &(vec[5]));
 	}
 
 	void Shader::set_color_ramp(GLuint max_stops,
-				    GLfloat *offsets,
-				    GLfloat *invfactor,
-				    GLfloat *colors) const {
+				    const GLfloat *offsets,
+				    const GLfloat *invfactor,
+				    const GLfloat *colors) const {
 		glUniform1fv(stop_offsets,
 			     max_stops, offsets);
 		glUniform1fv(stop_invfactor,
@@ -146,10 +162,11 @@ namespace gnuVG {
 	void Shader::render_elements(const GLuint *indices, GLsizei nr_indices) const {
 		ADD_GNUVG_PROFILER_PROBE(SH_render_elements);
 		ADD_GNUVG_PROFILER_COUNTER(SH_render_elements, nr_indices);
+
 		glDrawElements(GL_TRIANGLES, nr_indices, GL_UNSIGNED_INT, indices);
 	}
 
-	void Shader::build_vertex_shader(int caps) {
+	std::string  Shader::build_vertex_shader(int caps) {
 		std::stringstream vshad;
 
 		vshad <<
@@ -208,15 +225,23 @@ namespace gnuVG {
 		vshad <<
 			"}\n";
 
-		vertex_shader = vshad.str();
+		return vshad.str();
 	}
 
-	void Shader::build_fragment_shader(int caps) {
+	std::string Shader::build_fragment_shader(int caps) {
 		std::stringstream fshad;
+
+		bool horizontal_gauss = false;
+		bool do_gauss = false;
+
+		if(caps & do_horizontal_gaussian) {
+			horizontal_gauss = true;
+			do_gauss = true;
+		} else if(caps & do_vertical_gaussian)
+			do_gauss = true;
 
 		fshad <<
 			"precision highp float;\n"
-			"uniform vec4 v_color;\n"
 			;
 
 		if(caps & gradient_spread_mask)
@@ -258,8 +283,24 @@ namespace gnuVG {
 			fshad <<
 				"varying vec4 p_textureCoord;\n"
 				"uniform sampler2D p_texture;\n";
+		else // flat color
+			fshad <<
+				"uniform vec4 v_color;\n"
+				;
 
-		fshad << "void main() {\n";
+
+		if(do_gauss)
+			fshad
+				<< "uniform vec4 pxl_n_half_pxl_size;\n"
+				<< GenerateGaussFunctionCode(
+					(caps & gauss_krn_diameter_mask) >> 16,
+					true
+					)
+				;
+
+		fshad <<
+			"\n"
+			"void main() {\n";
 
 		GNUVG_ERROR("caps: %x -- gradient_spread_mask: %x -- %x\n",
 			    caps, gradient_spread_mask,
@@ -319,8 +360,24 @@ namespace gnuVG {
 			break;
 
 		case do_pattern:
-			fshad <<
-				"  vec4 c = texture2D( p_texture, p_textureCoord.xy );\n";
+			if(do_gauss) {
+				auto hpx_size = horizontal_gauss ?
+					"pxl_n_half_pxl_size.z, 0" :
+					"0, pxl_n_half_pxl_size.w"
+					;
+				auto px_size = horizontal_gauss ?
+					"pxl_n_half_pxl_size.x, 0" :
+					"0, pxl_n_half_pxl_size.y"
+					;
+				fshad <<
+					"  vec4 c = GaussianBlur( p_texture, p_textureCoord.xy, \n"
+					"                    vec2( " << hpx_size << " ),\n"
+					"                    vec2( " <<  px_size << " ) );\n"
+					;
+			} else {
+				fshad <<
+					"  vec4 c = texture2D( p_texture, p_textureCoord.xy );\n";
+			}
 			break;
 		}
 
@@ -332,7 +389,7 @@ namespace gnuVG {
 			"}\n"
 			;
 
-		fragment_shader = fshad.str();
+		return fshad.str();
 	}
 
 	static GLuint compile_shader(GLenum shader_type, const char *shader_source) {
@@ -398,12 +455,35 @@ namespace gnuVG {
 		return program;
 	}
 
-	Shader::Shader(int caps) {
-		build_vertex_shader(caps);
-		build_fragment_shader(caps);
+	static void print_shader(const std::string &title, const std::string &content_s) {
+		GNUVG_ERROR("%s\n", title.c_str());
 
-		GNUVG_ERROR("Vertex shader: %s\n", vertex_shader.c_str());
-		GNUVG_ERROR("Fragment shader: %s\n", fragment_shader.c_str());
+		auto content = content_s.c_str();
+		std::vector<char> bfr;
+		size_t k = 0, l = 0;
+
+		while(content[k] != '\0') {
+			bfr.clear();
+			while(content[k] != '\n' && content[k] != '\0') {
+				bfr.push_back(content[k]);
+				k += 1;
+			}
+			bfr.push_back('\0');
+			GNUVG_ERROR("%04d: %s\n", l, bfr.data());
+			if(content[k] == '\n') k += 1;
+			l++;
+		}
+	}
+
+	Shader::Shader(int caps) {
+		auto vertex_shader = build_vertex_shader(caps);
+		auto fragment_shader = build_fragment_shader(caps);
+
+		if(caps & do_horizontal_gaussian || caps & do_vertical_gaussian)
+			GNUVG_ERROR("Caps debug, gauss: %x\n", caps);
+
+		print_shader("Vertex Shader:", vertex_shader);
+		print_shader("Fragment Shader:", fragment_shader);
 
 		program_id = create_program(vertex_shader.c_str(),
 					    fragment_shader.c_str());
@@ -417,6 +497,7 @@ namespace gnuVG {
 
 		maskTexture = glGetUniformLocation(program_id , "m_texture" );
 
+		pxl_sizes = glGetUniformLocation(program_id, "pxl_n_half_pxl_size");
 		patternTexture = glGetUniformLocation(program_id , "p_texture" );
 		patternMatrix = glGetUniformLocation(program_id, "p_projection");
 
