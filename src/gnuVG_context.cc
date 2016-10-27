@@ -1496,7 +1496,6 @@ namespace gnuVG {
 
 		matrix_resize(buffer_width, buffer_height);
 		render_scissors();
-		recreate_buffers();
 	}
 
 	auto Context::get_internal_framebuffer(gnuVGFrameBuffer selection) -> const FrameBuffer* {
