@@ -1427,6 +1427,8 @@ namespace gnuVG {
 		buffer_width = current_framebuffer->width;
 		buffer_height = current_framebuffer->height;
 
+		glViewport(0, 0, buffer_width, buffer_height);
+
 		matrix_resize(buffer_width, buffer_height);
 		render_scissors();
 		recreate_buffers();
