@@ -121,6 +121,9 @@ namespace gnuVG {
 		FrameBuffer temporary_a, temporary_b;
 		VGint buffer_width, buffer_height;
 
+		// Temporary framebuffers
+		std::vector<FrameBuffer *> available_temporary_framebuffers;
+
 		// Scissor data
 		GLfloat scissor_vertices[GNUVG_MAX_SCISSORS * 4 * 2];
 		GLuint scissor_triangles[GNUVG_MAX_SCISSORS * 3 * 2];
@@ -184,6 +187,10 @@ namespace gnuVG {
 		void delete_framebuffer(FrameBuffer* framebuffer);
 		void render_to_framebuffer(const FrameBuffer* framebuffer);
 		const FrameBuffer* get_internal_framebuffer(gnuVGFrameBuffer selection);
+		FrameBuffer *get_temporary_framebuffer(VGImageFormat format,
+						       VGint w, VGint h,
+						       VGbitfield allowedQuality);
+		void return_temporary_framebuffer(FrameBuffer *fbf);
 
 		void copy_framebuffer_to_framebuffer(const FrameBuffer* dst,
 						     const FrameBuffer* src,

@@ -1449,6 +1449,30 @@ namespace gnuVG {
 		return nullptr;
 	}
 
+	Context::FrameBuffer* Context::get_temporary_framebuffer(VGImageFormat format,
+							VGint w, VGint h,
+							VGbitfield allowedQuality) {
+		for(auto k  = available_temporary_framebuffers.begin();
+		         k != available_temporary_framebuffers.end();
+		    k++) {
+			auto f = (*k);
+			if(f->width == w && f->height == h) {
+				available_temporary_framebuffers.erase(k);
+				return f;
+			}
+		}
+		auto f = new FrameBuffer();
+		if(!create_framebuffer(f, format, w, h, allowedQuality)) {
+			delete f;
+			f = nullptr;
+		}
+		return f;
+	}
+
+	void Context::return_temporary_framebuffer(FrameBuffer *fbf) {
+		available_temporary_framebuffers.push_back(fbf);
+	}
+
 	void Context::copy_framebuffer_to_framebuffer(const FrameBuffer* dst,
 						      const FrameBuffer* src,
 						      VGint dx, VGint dy,
