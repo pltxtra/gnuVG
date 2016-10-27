@@ -140,8 +140,5 @@ namespace gnuVG {
 
 		std::string build_vertex_shader(int caps);
 		std::string build_fragment_shader(int caps);
-
-		void create_primary_shader(int caps);
-		void create_secondary_shader(int caps);
 	};
 };
