@@ -113,6 +113,11 @@ namespace gnuVG {
 		glUniform1i(patternTexture, 2);
 	}
 
+	void Shader::set_wrap_mode(GLuint wrap_mode) const {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_mode);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_mode);
+	}
+
 	void Shader::set_color(const GLfloat *clr) const {
 		glUniform4fv(ColorHandle, 1, clr);
 	}

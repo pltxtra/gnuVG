@@ -88,6 +88,7 @@ namespace gnuVG {
 		void set_pattern_size(GLint width_in_pixels, GLint height_in_pixels) const;
 		void set_pattern_matrix(const GLfloat *mtrx) const;
 		void set_pattern_texture(GLuint tex) const;
+		void set_wrap_mode(GLuint wrap_mode) const;
 
 		void set_color(const GLfloat *clr) const;
 		void set_linear_parameters(const GLfloat *vec) const;
