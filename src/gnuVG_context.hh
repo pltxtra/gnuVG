@@ -163,7 +163,11 @@ namespace gnuVG {
 		void trivial_fill_area(
 			VGint x, VGint y, VGint width, VGint height,
 			VGfloat r, VGfloat g, VGfloat b, VGfloat a);
-		void trivial_render_framebuffer(const FrameBuffer* framebuffer);
+		// if gaussian_width/height is <= 1 - no gaussian is done
+		void trivial_render_framebuffer(const FrameBuffer* framebuffer,
+						int gaussian_width = 1,
+						int gaussian_height = 1,
+						VGTilingMode = VG_TILE_FILL);
 		void prepare_framebuffer_matrix(const FrameBuffer* frbuf);
 		void select_conversion_matrix(MatrixMode conversion_matrix);
 		void use_pipeline(gnuVGPipeline new_pipeline, VGPaintMode new_mode);

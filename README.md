@@ -133,7 +133,9 @@ gnuVG is only a partial implementation of the OpenVG API.
   * vgImageSubData - only VG_sRGBA_8888 and stride = 0
   * vgDrawImage
 * Text - glyph rendering using paths supported, not images.
-* Image filters - not implemented
+* Image filters - Only vgGaussianBlur is partially implemented, with a gnuVG extension.
+  * blur can be rendered directly to the current target by using VG_INVALID_HANDLE as dst.
+
 * Blending - only VG_BLEND_SRC and VG_BLEND_SRC_OVER
 * VGU - supported
 

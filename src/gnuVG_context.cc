@@ -891,7 +891,10 @@ namespace gnuVG {
 		vgSeti(VG_BLEND_MODE, old_blend); // Restore blend mode
 	}
 
-	void Context::trivial_render_framebuffer(const FrameBuffer* framebuffer) {
+	void Context::trivial_render_framebuffer(const FrameBuffer* framebuffer,
+						 int gaussian_width,
+						 int gaussian_height,
+						 VGTilingMode tiling_mode) {
 		auto w = (VGfloat)framebuffer->width;
 		auto h = (VGfloat)framebuffer->height;
 
@@ -901,16 +904,38 @@ namespace gnuVG {
 		auto c3_p = matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].map_point(Point(   w,    h));
 		auto c4_p = matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].map_point(Point(   w, 0.0f));
 
-		auto c1 = screen_matrix.map_point(c1_p);
-		auto c2 = screen_matrix.map_point(c2_p);
-		auto c3 = screen_matrix.map_point(c3_p);
-		auto c4 = screen_matrix.map_point(c4_p);
+		Point
+			c1(-1.0, -1.0),
+			c2(-1.0,  1.0),
+			c3( 1.0,  1.0),
+			c4( 1.0, -1.0);
+
+		GLfloat vertices_full[] = {
+			c1.x, c1.y,
+			c2.x, c2.y,
+			c3.x, c3.y,
+			c4.x, c4.y,
+		};
+
+		if(tiling_mode == VG_TILE_FILL) {
+			c1 = screen_matrix.map_point(c1_p);
+			c2 = screen_matrix.map_point(c2_p);
+			c3 = screen_matrix.map_point(c3_p);
+			c4 = screen_matrix.map_point(c4_p);
+		}
 
 		GLfloat mat[] = {
 			1.0f, 0.0f, 0.0f, 0.0f,
 			0.0f, 1.0f, 0.0f, 0.0f,
 			0.0f, 0.0f, 1.0f, 0.0f,
 			0.0f, 0.0f, 0.0f, 1.0f
+		};
+
+		GLfloat mat_full[] = {
+			0.5f, 0.0f, 0.0f, 0.0f,
+			0.0f, 0.5f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.5f, 0.5f, 0.0f, 1.0f
 		};
 
 		GLfloat vertices[] = {
@@ -925,8 +950,28 @@ namespace gnuVG {
 			0, 2, 3
 		};
 
-		auto f = [this, framebuffer, mat, vertices, indices]
-			(bool do_horizontal_gauss, int kern_diameter) {
+		GLuint wrap_mode = GL_CLAMP_TO_EDGE;
+		switch(tiling_mode) {
+		default:
+		case VG_TILING_MODE_FORCE_SIZE:
+		case VG_TILE_FILL:
+		case VG_TILE_PAD:
+			wrap_mode = GL_CLAMP_TO_EDGE;
+			break;
+		case VG_TILE_REPEAT:
+			wrap_mode = GL_REPEAT;
+			break;
+		case VG_TILE_REFLECT:
+			wrap_mode = GL_MIRRORED_REPEAT;
+			break;
+		}
+
+		prepare_framebuffer_matrix(framebuffer);
+
+		auto f = [this, vertices, vertices_full, mat, mat_full, indices, wrap_mode]
+			(const FrameBuffer *fbuffer,
+			 bool do_horizontal_gauss,
+			 int kern_diameter) {
 			int caps = Shader::do_pattern;
 			if(kern_diameter > 1) {
 				caps |= do_horizontal_gauss ?
@@ -943,17 +988,37 @@ namespace gnuVG {
 			active_shader->set_blending(blend_mode);
 			active_shader->set_matrix(mat);
 
-			prepare_framebuffer_matrix(framebuffer);
-			active_shader->set_pattern_texture(framebuffer->texture);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			active_shader->set_pattern_matrix(image_matrix_data);
-			active_shader->set_pattern_size(framebuffer->width, framebuffer->height);
+			active_shader->set_pattern_texture(fbuffer->texture);
+			active_shader->set_wrap_mode(wrap_mode);
+			active_shader->set_pattern_matrix(do_horizontal_gauss ?
+							  mat_full :
+							  image_matrix_data);
+			active_shader->set_pattern_size(fbuffer->width, fbuffer->height);
 
-			active_shader->load_2dvertex_array(vertices, 0);
+			active_shader->load_2dvertex_array(do_horizontal_gauss ?
+							   vertices_full : vertices,
+							   0);
 			active_shader->render_elements(indices, 6);
 		};
-		f(false, 1);
+		if(gaussian_width <= 1 && gaussian_height <= 1)
+			f(framebuffer, false, 1);
+		else {
+			auto tfbf = get_temporary_framebuffer(VG_sRGBA_8888,
+							      framebuffer->width, framebuffer->height,
+							      VG_IMAGE_QUALITY_BETTER);
+
+			if(tfbf) {
+				save_current_framebuffer();
+				render_to_framebuffer(tfbf);
+				trivial_fill_area(0, 0,
+						  tfbf->width, tfbf->height,
+						  0.0, 0.0, 0.0, 0.0);
+				f(framebuffer, true, gaussian_width);
+				restore_current_framebuffer();
+				f(tfbf, false, gaussian_height);
+				return_temporary_framebuffer(tfbf);
+			}
+		}
 	}
 
 	void Context::trivial_render_elements(

@@ -22,6 +22,7 @@ gnuVG_memclasses.cc gnuVG_memclasses.hh \
 gnuVG_fontloader.cc gnuVG_fontloader.hh \
 gnuVG_simplified_path.cc gnuVG_simplifified_path.hh \
 gnuVG_termination_handler.cc \
+gnuVG_filter.cc \
 gnuVG_gaussianblur.hh
 
 libgnuVG_la_LDFLAGS =  -L${prefix}/lib ./libtess2/src/libtess2.la -lGLESv2 -lfreetype
