@@ -962,10 +962,10 @@ namespace gnuVG {
 
 		Matrix *m = &screen_matrix;
 		GLfloat mat[] = {
-			m->a, m->b, 0.0f, 0.0f,
-			m->d, m->e, 0.0f, 0.0f,
+			m->a, m->b, 0.0f, m->c,
+			m->d, m->e, 0.0f, m->f,
 			0.0f, 0.0f, 1.0f, 0.0f,
-			m->g, m->h, 0.0f, 1.0f
+			m->g, m->h, 0.0f, m->i
 		};
 
 		VGfloat col[] = {r, g, b, a};
