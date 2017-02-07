@@ -212,6 +212,8 @@ extern "C" {
 		auto i = Object::get<Image>(image);
 		if(i)
 			Context::get_current()->render_to_framebuffer(i->get_framebuffer());
+		else if(image == VG_INVALID_HANDLE)
+			Context::get_current()->render_to_framebuffer(nullptr);
 	}
 
 	void VG_API_ENTRY vgClearImage(VGImage image,
