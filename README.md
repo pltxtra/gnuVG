@@ -158,6 +158,11 @@ has some other API extensions:
 
 ```
 
+// Redirect all rendering to the image instead of on-screen rendering
+// pass VG_INVALID_HANDLE to reset to on-screen rendering
+VG_API_CALL void VG_API_ENTRY gnuvgRenderToImage(VGImage image) VG_API_EXIT;
+
+
 // Load a font using libfreetype (currently hardcoded for Android...)
 VGFont gnuvgLoadFont(const char* family, gnuVGFontStyle fontStyle);
 
