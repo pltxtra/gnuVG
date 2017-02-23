@@ -113,6 +113,10 @@ namespace gnuVG {
 		std::shared_ptr<Paint>  default_fill_paint, default_stroke_paint,
 			fill_paint, stroke_paint;
 
+		bool do_color_transform = false;
+		VGfloat color_transform_scale[4];
+		VGfloat color_transform_bias[4];
+
 		void matrix_resize(VGint pixel_width, VGint pixel_height);
 
 		// Buffer objects

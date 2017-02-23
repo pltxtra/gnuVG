@@ -251,6 +251,8 @@ namespace gnuVG {
 		case VG_CLEAR_COLOR:
 		case VG_STROKE_CAP_STYLE:
 		case VG_STROKE_JOIN_STYLE:
+		case VG_COLOR_TRANSFORM:
+		case VG_COLOR_TRANSFORM_VALUES:
 			set_error(VG_ILLEGAL_ARGUMENT_ERROR);
 			break;
 			/* Mode settings */
@@ -262,8 +264,6 @@ namespace gnuVG {
 			break;
 
 			/* Color Transformation */
-		case VG_COLOR_TRANSFORM:
-		case VG_COLOR_TRANSFORM_VALUES:
 			break;
 
 			/* Stroke parameters */
@@ -317,6 +317,7 @@ namespace gnuVG {
 		case VG_STROKE_LINE_WIDTH:
 		case VG_CLEAR_COLOR:
 		case VG_STROKE_MITER_LIMIT:
+		case VG_COLOR_TRANSFORM_VALUES:
 			set_error(VG_ILLEGAL_ARGUMENT_ERROR);
 			break;
 			/* Mode settings */
@@ -390,7 +391,7 @@ namespace gnuVG {
 
 			/* Color Transformation */
 		case VG_COLOR_TRANSFORM:
-		case VG_COLOR_TRANSFORM_VALUES:
+			do_color_transform = (((VGboolean)value) == VG_TRUE) ? true : false;
 			break;
 
 			/* Stroke parameters */
@@ -477,7 +478,18 @@ namespace gnuVG {
 			if(count == 2)
 				for(int k = 0; k < 2; ++k)
 					glyph_origin[k] = values[k];
+			else
+				set_error(VG_ILLEGAL_ARGUMENT_ERROR);
+
 			break;
+		case VG_COLOR_TRANSFORM_VALUES:
+			if(count == 8)
+				for(int k = 0; k < 4; ++k) {
+					color_transform_scale[k] = values[k];
+					color_transform_bias[k] = values[k + 4];
+				}
+			else
+				set_error(VG_ILLEGAL_ARGUMENT_ERROR);
 		default:
 			set_error(VG_ILLEGAL_ARGUMENT_ERROR);
 		}
@@ -623,6 +635,7 @@ namespace gnuVG {
 		case VG_STROKE_LINE_WIDTH:
 		case VG_CLEAR_COLOR:
 		case VG_STROKE_MITER_LIMIT:
+		case VG_COLOR_TRANSFORM_VALUES:
 			set_error(VG_ILLEGAL_ARGUMENT_ERROR);
 			break;
 			/* Mode settings */
@@ -668,7 +681,7 @@ namespace gnuVG {
 
 			/* Color Transformation */
 		case VG_COLOR_TRANSFORM:
-		case VG_COLOR_TRANSFORM_VALUES:
+			return do_color_transform ? VG_TRUE : VG_FALSE;
 			break;
 
 			/* Stroke parameters */
@@ -795,6 +808,13 @@ namespace gnuVG {
 			if(count == 2)
 				for(int k = 0; k < 2; ++k)
 					values[k] = glyph_origin[k];
+			break;
+		case VG_COLOR_TRANSFORM_VALUES:
+			if(count == 8)
+				for(int k = 0; k < 4; ++k) {
+					values[k    ] = color_transform_scale[k];
+					values[k + 4] = color_transform_bias[k];
+				}
 			break;
 		default:
 			set_error(VG_ILLEGAL_ARGUMENT_ERROR);
@@ -980,6 +1000,8 @@ namespace gnuVG {
 				caps |= (kern_diameter << Shader::gauss_krn_diameter_shift) &
 					Shader::gauss_krn_diameter_mask;
 			}
+			if(do_color_transform)
+				caps |= Shader::do_color_transform;
 
 			active_shader = Shader::get_shader(
 				caps
@@ -987,6 +1009,11 @@ namespace gnuVG {
 			active_shader->use_shader();
 			active_shader->set_blending(blend_mode);
 			active_shader->set_matrix(mat);
+
+			if(do_color_transform)
+				active_shader->set_color_transform(
+					color_transform_scale,
+					color_transform_bias);
 
 			active_shader->set_pattern_texture(fbuffer->texture);
 			active_shader->set_wrap_mode(wrap_mode);
@@ -1036,12 +1063,17 @@ namespace gnuVG {
 		VGfloat col[] = {r, g, b, a};
 
 		active_shader = Shader::get_shader(
-			Shader::do_flat_color
+			Shader::do_flat_color |
+			(do_color_transform ? Shader::do_color_transform : 0)
 			);
 		active_shader->use_shader();
 		active_shader->set_blending(blend_mode);
 		active_shader->set_matrix(mat);
 		active_shader->set_color(col);
+		if(do_color_transform)
+			active_shader->set_color_transform(
+				color_transform_scale,
+				color_transform_bias);
 		active_shader->load_2dvertex_array(vertices, 0);
 		active_shader->render_elements(indices, indices_count);
 	}
@@ -1212,11 +1244,19 @@ namespace gnuVG {
 				break;
 			}
 
+		if(do_color_transform)
+			caps |= Shader::do_color_transform;
+
 		active_shader = Shader::get_shader(caps);
 		active_shader->use_shader();
 		active_shader->set_blending(blend_mode);
 		active_shader->set_matrix(conversion_matrix_data);
 		active_shader->set_pre_translation(pre_translation);
+
+		if(do_color_transform)
+			active_shader->set_color_transform(
+				color_transform_scale,
+				color_transform_bias);
 
 		switch(pipeline_mode) {
 		case VG_COLOR_RAMP_SPREAD_MODE_FORCE_SIZE:

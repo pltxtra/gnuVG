@@ -118,6 +118,12 @@ namespace gnuVG {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_mode);
 	}
 
+	void Shader::set_color_transform(const GLfloat *scale,
+					 const GLfloat *bias) const {
+		glUniform4fv(ctransform_scale, 1, scale);
+		glUniform4fv(ctransform_bias, 1, bias);
+	}
+
 	void Shader::set_color(const GLfloat *clr) const {
 		glUniform4fv(ColorHandle, 1, clr);
 	}
@@ -258,6 +264,11 @@ namespace gnuVG {
 				"varying vec2 v_textureCoord;\n"
 				"uniform sampler2D m_texture;\n";
 
+		if(caps & do_color_transform)
+			fshad <<
+				"uniform vec4 ctransform_scale;\n"
+				"uniform vec4 ctransform_bias;\n";
+
 		auto primary_mode = caps & primary_mode_mask;
 		if(primary_mode == do_linear_gradient ||
 		   primary_mode == do_radial_gradient) {
@@ -389,8 +400,19 @@ namespace gnuVG {
 		if(caps & do_mask)
 			fshad << "  c = m.a * c;\n";
 
+		if(caps & do_color_transform)
+			fshad <<
+				"  gl_FragColor.r = c.r * ctransform_scale.r + ctransform_bias.r;\n"
+				"  gl_FragColor.g = c.g * ctransform_scale.g + ctransform_bias.g;\n"
+				"  gl_FragColor.b = c.b * ctransform_scale.b + ctransform_bias.b;\n"
+				"  gl_FragColor.a = c.a * ctransform_scale.a + ctransform_bias.a;\n"
+				;
+		else
+			fshad <<
+				"  gl_FragColor = c;\n"
+				;
+
 		fshad <<
-			"  gl_FragColor = c;\n"
 			"}\n"
 			;
 
@@ -507,6 +529,9 @@ namespace gnuVG {
 		patternMatrix = glGetUniformLocation(program_id, "p_projection");
 
 		surf2paint = glGetUniformLocation(program_id, "surf2paint");
+
+		ctransform_scale = glGetUniformLocation(program_id, "ctransform_scale");
+		ctransform_bias = glGetUniformLocation(program_id, "ctransform_bias");
 
 		linear_normal = glGetUniformLocation(program_id, "linear_normal");
 		linear_start = glGetUniformLocation(program_id, "linear_start");

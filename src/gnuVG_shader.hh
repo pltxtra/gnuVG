@@ -50,6 +50,7 @@ namespace gnuVG {
 			do_pretranslate		= 0x00000200,
 			do_horizontal_gaussian	= 0x00000400,
 			do_vertical_gaussian	= 0x00000800,
+			do_color_transform	= 0x01000000,
 
 			// gaussian kernel configuration
 			gauss_krn_diameter_mask = 0x00ff0000,
@@ -90,6 +91,9 @@ namespace gnuVG {
 		void set_pattern_texture(GLuint tex) const;
 		void set_wrap_mode(GLuint wrap_mode) const;
 
+		void set_color_transform(const GLfloat *scale,
+					 const GLfloat *bias) const;
+
 		void set_color(const GLfloat *clr) const;
 		void set_linear_parameters(const GLfloat *vec) const;
 		void set_radial_parameters(const GLfloat *vec) const;
@@ -123,6 +127,8 @@ namespace gnuVG {
 		GLint patternTexture, patternMatrix;
 
 		GLint surf2paint;
+
+		GLint ctransform_scale, ctransform_bias;
 
 		GLint linear_normal;
 		GLint linear_start;
