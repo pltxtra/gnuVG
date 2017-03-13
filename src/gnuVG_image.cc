@@ -208,12 +208,27 @@ extern "C" {
 		Object::dereference(image);
 	}
 
+	static std::map<Context*, VGImage> context2image;
 	void VG_API_ENTRY gnuvgRenderToImage(VGImage image) VG_API_EXIT {
 		auto i = Object::get<Image>(image);
+
+		// remember the image for each context
+		auto ctx = Context::get_current();
+		context2image[ctx] = image;
+
 		if(i)
-			Context::get_current()->render_to_framebuffer(i->get_framebuffer());
+			ctx->render_to_framebuffer(i->get_framebuffer());
 		else if(image == VG_INVALID_HANDLE)
-			Context::get_current()->render_to_framebuffer(nullptr);
+			ctx->render_to_framebuffer(nullptr);
+	}
+
+	VGImage VG_API_ENTRY gnuvgGetRenderTarget(void) VG_API_EXIT {
+		auto ctx = Context::get_current();
+		auto iterator = context2image.find(ctx);
+		if(iterator == context2image.end())
+			return VG_INVALID_HANDLE;
+
+		return (*iterator).second;
 	}
 
 	void VG_API_ENTRY vgClearImage(VGImage image,

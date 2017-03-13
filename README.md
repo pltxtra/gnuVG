@@ -163,6 +163,9 @@ has some other API extensions:
 // pass VG_INVALID_HANDLE to reset to on-screen rendering
 VG_API_CALL void VG_API_ENTRY gnuvgRenderToImage(VGImage image) VG_API_EXIT;
 
+// Get the handle of the VGimage we are rendering to, or VG_INVALID_HANDLE
+// in case we are doing on-screen rendering
+VG_API_CALL VGImage VG_API_ENTRY gnuvgGetRenderTarget(void) VG_API_EXIT;
 
 // Load a font using libfreetype (currently hardcoded for Android...)
 VGFont gnuvgLoadFont(const char* family, gnuVGFontStyle fontStyle);

@@ -31,6 +31,7 @@ extern "C" {
 
 	// pass NULL or VG_INVALID_HANDLE to reset to on-screen rendering
 	VG_API_CALL void VG_API_ENTRY gnuvgRenderToImage(VGImage image) VG_API_EXIT;
+	VG_API_CALL VGImage VG_API_ENTRY gnuvgGetRenderTarget(void) VG_API_EXIT;
 
 
 	#define	gnuVG_NORMAL               0
