@@ -53,8 +53,14 @@ namespace gnuVG {
 			glDisable(GL_BLEND);
 			break;
 
-		case blend_dst_over:
 		case blend_src_in:
+			glEnable(GL_BLEND);
+			glBlendFuncSeparate(
+				GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
+				GL_DST_ALPHA, GL_ZERO);
+			break;
+
+		case blend_dst_over:
 		case blend_dst_in:
 		case blend_multiply:
 		case blend_screen:
@@ -66,7 +72,9 @@ namespace gnuVG {
 			// everything not supported
 			// will default into src_over
 			glEnable(GL_BLEND);
-			glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glBlendFuncSeparate(
+				GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
+				GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			break;
 		}
 	}

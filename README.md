@@ -68,7 +68,10 @@ gnuVG is only a partial implementation of the OpenVG API.
   * Callable - no effect
 * vgSet/Get*() - The following are supported:
   * VG_MATRIX_MODE
-  * VG_BLEND_MODE - only VG_BLEND_SRC and VG_BLEND_SRC_OVER are supported
+  * VG_BLEND_MODE - supported:
+    * VG_BLEND_SRC
+    * VG_BLEND_SRC_OVER
+    * VG_BLEND_SRC_IN
   * VG_MAX_COLOR_RAMP_STOPS
   * VG_MAX_DASH_COUNT
   * VG_MAX_FLOAT
