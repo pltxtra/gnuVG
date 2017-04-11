@@ -1037,9 +1037,12 @@ namespace gnuVG {
 			if(tfbf) {
 				save_current_framebuffer();
 				render_to_framebuffer(tfbf);
+				auto keep_old_blend_mode = blend_mode;
+				blend_mode = Shader::blend_src;
 				trivial_fill_area(0, 0,
 						  tfbf->width, tfbf->height,
 						  0.0, 0.0, 0.0, 0.0);
+				blend_mode = keep_old_blend_mode;
 				f(framebuffer, true, gaussian_width);
 				restore_current_framebuffer();
 				f(tfbf, false, gaussian_height);
