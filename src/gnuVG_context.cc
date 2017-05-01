@@ -433,6 +433,7 @@ namespace gnuVG {
 
 		case VG_SCISSORING:
 			scissors_are_active = (((VGboolean)value) == VG_TRUE) ? true : false;
+			render_scissors();
 			break;
 
 			/* Pixel layout information */
