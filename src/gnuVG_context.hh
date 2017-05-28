@@ -40,7 +40,7 @@ namespace gnuVG {
 	class Context {
 	public:
 		struct FrameBuffer {
-			GLuint framebuffer = 0, texture = 0;
+			GLuint framebuffer = 0, texture = 0, stencil = 0;
 			VGint width = 128, height = 128;
 		};
 

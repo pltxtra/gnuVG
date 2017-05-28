@@ -831,35 +831,33 @@ namespace gnuVG {
 namespace gnuVG {
 
 	void Context::render_scissors() {
-		if(scissors_are_active) {
-			if(nr_active_scissors > 0) {
-				glEnable(GL_STENCIL_TEST);
-				glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+		if(scissors_are_active &&  nr_active_scissors > 0) {
+			glEnable(GL_STENCIL_TEST);
+			glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-				// first we clear the stencil to zero
-				glClearStencil(0);
-				glClear(GL_STENCIL_BUFFER_BIT);
+			// first we clear the stencil to zero
+			glClearStencil(0);
+			glStencilMask(0xff);
+			glClear(GL_STENCIL_BUFFER_BIT);
 
-				// then we render the scissor elements
-				glStencilFunc(GL_ALWAYS,
-					      1,
-					      1);
-				glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+			// then we render the scissor elements
+			glStencilFunc(GL_ALWAYS,
+				      1,
+				      1);
+			glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
 
-				trivial_render_elements(scissor_vertices,
-							scissor_triangles,
-							6 * nr_active_scissors,
-							// colors will be ignored
-							// because of disabled color mask
-							1.0, 0.0, 0.0, 1.0);
+			trivial_render_elements(scissor_vertices,
+						scissor_triangles,
+						6 * nr_active_scissors,
+						// colors will be ignored
+						// because of disabled color mask
+						1.0, 0.0, 0.0, 1.0);
 
-				glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-				glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-			} else {
-				glClearStencil(0);
-				glClear(GL_STENCIL_BUFFER_BIT);
-				glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-			}
+			glStencilFunc(GL_EQUAL, 1, 1);
+			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		} else {
+			glDisable(GL_STENCIL_TEST);
 		}
 	}
 
@@ -1276,14 +1274,16 @@ namespace gnuVG {
 		if(mask_is_active) active_shader->set_mask_texture(mask.texture);
 
 		if(scissors_are_active) {
-			glEnable(GL_STENCIL_TEST);
+			glStencilMask(0xff);
 			glStencilFunc(GL_EQUAL,
 				      1,
 				      1);
 			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+			glEnable(GL_STENCIL_TEST);
 		} else {
-			glDisable(GL_STENCIL_TEST);
+			glStencilFunc(GL_ALWAYS, 1, 1);
 			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+			glDisable(GL_STENCIL_TEST);
 		}
 
 		switch(active_paint->ptype) {
@@ -1488,6 +1488,12 @@ namespace gnuVG {
 		destination->height = h;
 		glGenFramebuffers(1, &destination->framebuffer);
 		glGenTextures(1, &destination->texture);
+		glGenRenderbuffers(1, &destination->stencil);
+
+		glBindRenderbuffer(GL_RENDERBUFFER, destination->stencil);
+		glRenderbufferStorage(GL_RENDERBUFFER,
+				      GL_STENCIL_INDEX8,
+				      w, h);
 
 		glBindTexture(GL_TEXTURE_2D, destination->texture);
 		glTexImage2D(GL_TEXTURE_2D, 0,
@@ -1506,6 +1512,8 @@ namespace gnuVG {
 		// specify texture as color attachment
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
 				       destination->texture, 0 );
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT,
+				GL_RENDERBUFFER, destination->stencil);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, current_framebuffer->framebuffer);
 
@@ -1518,8 +1526,10 @@ namespace gnuVG {
 		}
 		glDeleteFramebuffers(1, &framebuffer->framebuffer);
 		glDeleteTextures(1, &framebuffer->texture);
+		glDeleteRenderbuffers(1, &framebuffer->stencil);
 		framebuffer->framebuffer = 0;
 		framebuffer->texture = 0;
+		framebuffer->stencil = 0;
 	}
 
 	void Context::render_to_framebuffer(const FrameBuffer* framebuffer) {
