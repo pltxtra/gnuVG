@@ -1739,7 +1739,7 @@ extern "C" {
 					     VGint paramType) VG_API_EXIT {
 		auto o = Object::get<Object>(object);
 		if(object)
-			return o->vgGetParameteri(paramType);
+			return o->vgGetParameterf(paramType);
 		return 0;
 	}
 
