@@ -1,4 +1,4 @@
-SUBDIRS = libtess2
+SUBDIRS = libtess2 skyline
 
 lib_LTLIBRARIES = libgnuVG.la
 
@@ -25,6 +25,6 @@ gnuVG_termination_handler.cc \
 gnuVG_filter.cc \
 gnuVG_gaussianblur.hh
 
-libgnuVG_la_LDFLAGS =  -L${prefix}/lib ./libtess2/src/libtess2.la -lGLESv2 -lfreetype
+libgnuVG_la_LDFLAGS =  -L${prefix}/lib ./skyline/libskyline.la ./libtess2/src/libtess2.la -lGLESv2 -lfreetype
 
 nobase_include_HEADERS = gnuVG/VG/openvg.h gnuVG/VG/gvgextensions.h gnuVG/VG/vgplatform.h gnuVG/VG/vgu.h gnuVG/VG/gnuVG_profiler.hh
