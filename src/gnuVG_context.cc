@@ -30,9 +30,6 @@
 #define ENABLE_GNUVG_PROFILER
 #include <VG/gnuVG_profiler.hh>
 
-#define POSITION_ATTRIB_HANDLE 3
-#define KLM_ATTRIB_HANDLE      4
-
 namespace gnuVG {
 	Context *Context::current_context = 0;
 
@@ -1358,30 +1355,11 @@ namespace gnuVG {
 			glyph_origin[k] += escapement[k];
 	}
 
-	static const GLfloat *__veerts;
-	static GLint __striide;
-
 	void Context::load_2dvertex_array(const GLfloat *verts, GLint stride) {
 		if(active_shader) {
 			active_shader->load_2dvertex_array(verts, stride);
 			return;
 		}
-		ADD_GNUVG_PROFILER_PROBE(load_2dvertex_array);
-		__veerts = verts;
-		__striide = stride;
-
-		glVertexAttribPointer(POSITION_ATTRIB_HANDLE, 2, GL_FLOAT, GL_FALSE,
-				      stride * sizeof(GLfloat), verts);
-		glEnableVertexAttribArray(POSITION_ATTRIB_HANDLE);
-	}
-
-	void Context::load_klm_array(const GLfloat *klm, GLint stride) {
-		if(active_shader) {
-			active_shader->load_klm_array(klm, stride);
-			return;
-		}
-		glVertexAttribPointer(KLM_ATTRIB_HANDLE, 3, GL_FLOAT, GL_FALSE, stride * sizeof(GLfloat), klm);
-		glEnableVertexAttribArray(KLM_ATTRIB_HANDLE);
 	}
 
 	void Context::render_triangles(GLint first, GLsizei count) {

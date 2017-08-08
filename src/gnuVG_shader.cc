@@ -169,11 +169,6 @@ namespace gnuVG {
 		glEnableVertexAttribArray(position_handle);
 	}
 
-	void Shader::load_klm_array(const GLfloat *klm, GLint stride) const {
-		glVertexAttribPointer(klm_handle, 3, GL_FLOAT, GL_FALSE, stride * sizeof(GLfloat), klm);
-		glEnableVertexAttribArray(klm_handle);
-	}
-
 	void Shader::render_triangles(GLint first, GLsizei count) const {
 		glDrawArrays(GL_TRIANGLES, first, count);
 	}
@@ -524,7 +519,6 @@ namespace gnuVG {
 					    fragment_shader.c_str());
 
 		position_handle = glGetAttribLocation(program_id, "v_position");
-		klm_handle = glGetAttribLocation(program_id, "klm");
 
 		ColorHandle = glGetUniformLocation(program_id, "v_color");
 		Matrix = glGetUniformLocation(program_id, "modelview_projection");

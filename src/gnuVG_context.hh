@@ -179,7 +179,6 @@ namespace gnuVG {
 		void use_glyph_origin_as_pre_translation(VGfloat specific_glyph_origin[2]);
 		void adjust_glyph_origin(VGfloat escapement[2]);
 		void load_2dvertex_array(const GLfloat *verts, GLint stride);
-		void load_klm_array(const GLfloat *klm, GLint stride);
 		void render_triangles(GLint first, GLsizei vertice_count);
 		void render_elements(const GLuint *indices, GLsizei nr_indices);
 		void calculate_bounding_box(Point* bounding_box);

@@ -103,7 +103,6 @@ namespace gnuVG {
 				    const GLfloat *colors) const;
 
 		void load_2dvertex_array(const GLfloat *verts, GLint stride) const;
-		void load_klm_array(const GLfloat *klm, GLint stride) const;
 		void render_triangles(GLint first, GLsizei count) const;
 		void render_elements(const GLuint *indices, GLsizei nr_indices) const;
 
@@ -115,7 +114,7 @@ namespace gnuVG {
 		GLuint program_id;
 
 		/* shader handles */
-		GLint position_handle, klm_handle;
+		GLint position_handle;
 
 		GLint ColorHandle;
 		GLint Matrix;
