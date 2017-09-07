@@ -50,6 +50,7 @@ namespace gnuVG {
 	static GvgVector<unsigned int> t_array; // triangle vertice indices
 	static unsigned int previous_segment[4]; // indices for previous segment
 	static unsigned int current_segment[4]; // indices for current segment
+	static unsigned int first_segment[4]; // indices for current segment
 
 	static VGfloat stroke_width = 1.0f;
 	static VGfloat miter_limit = 1.0f;
@@ -596,30 +597,38 @@ namespace gnuVG {
 		auto s = segments.data();
 		auto max_k = segments.size();
 		auto k = max_k;
+		auto unfinished_contour = false;
 		Point pen(0.0f, 0.0f);
 		for(k = 0; k < max_k; k++) {
 			switch(s[k].t) {
 			case sp_close:
-				finish_contour(true);
+				if(unfinished_contour)
+					finish_contour(true);
+				unfinished_contour = false;
 				break;
 
 			case sp_move_to:
-				finish_contour(false);
+				if(unfinished_contour)
+					finish_contour(false);
+				unfinished_contour = false;
 				add_vertice(s[k].ep);
 				break;
 
 			case sp_line_to:
+				unfinished_contour = true;
 				add_vertice(s[k].ep);
 				break;
 
 			case sp_cubic_to:
+				unfinished_contour = true;
 				process_curve(pen, s[k].c1,
 					      s[k].c2, s[k].ep);
 				break;
 			}
 			pen = s[k].ep;
 		}
-		finish_contour(false);
+		if(unfinished_contour)
+			finish_contour(false);
 	}
 
 	static Point calculate_pixelsize() {
@@ -817,6 +826,9 @@ namespace gnuVG {
 		if(join_style == no_join) {
 			// add no join, but remember this specific direction
 			first_direction = new_direction;
+			for(unsigned int k = 0; k < 4; k++) {
+				first_segment[k] = current_segment[k];
+			}
 		} else {
 			auto width_factor = (stroke_width / last_direction.length()) * 0.5f;
 			Point last_normal = width_factor * last_direction.normal();
@@ -849,6 +861,13 @@ namespace gnuVG {
 		}
 		join_style = join_bevel; // set join_style to bevel until a new segment is completed
 		last_direction = new_direction;
+	}
+
+	static void close_to_first_segment() {
+		for(unsigned int k = 0; k < 4; k++) {
+			previous_segment[k] = current_segment[k];
+			current_segment[k] = first_segment[k];
+		}
 	}
 
 	static void push_segment_outline_triangles(const Point &normal, const Point &stroke) {
@@ -964,7 +983,7 @@ namespace gnuVG {
 				nr_vertices = 0;
 			} else {
 				create_segment_outline(p);
-					join_style = default_join_style;
+				join_style = default_join_style;
 			}
 		};
 
@@ -974,8 +993,12 @@ namespace gnuVG {
 
 			if(do_close) {
 				create_segment_outline(contour_start);
+				join_style = default_join_style;
+				close_to_first_segment();
 				add_join(first_direction);
 			}
+
+			join_style = no_join;
 
 			StrokeData sdat = {
 				.vertices = v_array.data(),
