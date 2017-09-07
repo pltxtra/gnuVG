@@ -1414,7 +1414,7 @@ namespace gnuVG {
 	void Context::transform_bounding_box(Point* bbox, VGfloat *sp_ep) {
 		Point transformed[4];
 		for(int k = 0; k < 4; k++) {
-			transformed[k] = final_matrix[conversion_matrix].map_point(bbox[k]);
+			transformed[k] = matrix[conversion_matrix].map_point(bbox[k]);
 		}
 
 		Point bounding_box[2];
@@ -1426,13 +1426,10 @@ namespace gnuVG {
 			add_to_bounding_box(bounding_box, transformed[k]);
 		}
 
-		// we must convert the bbox to screen coordinates
-		auto w = current_framebuffer->width;
-		auto h = current_framebuffer->height;
-		sp_ep[0] = w * (0.5f + bounding_box[0].x / 2.0f);
-		sp_ep[1] = h * (0.5f - bounding_box[1].y / 2.0f);
-		sp_ep[2] = w * (0.5f + bounding_box[1].x / 2.0f);
-		sp_ep[3] = h * (0.5f - bounding_box[0].y / 2.0f);
+		sp_ep[0] = bounding_box[0].x;
+		sp_ep[1] = bounding_box[0].y;
+		sp_ep[2] = bounding_box[1].x;
+		sp_ep[3] = bounding_box[1].y;
 	}
 
 	void Context::get_pixelsize(VGint& w, VGint& h) {
