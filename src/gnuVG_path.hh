@@ -55,6 +55,8 @@ namespace gnuVG {
 		void vgDrawPath_fill_regular(); // regular tesselation
 		void vgDrawPath_stroke();
 
+		void cleanup_path();
+
 	public:
 		VGPathDatatype get_dataType() {
 			return dataType;
