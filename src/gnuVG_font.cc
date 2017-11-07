@@ -25,6 +25,7 @@
 
 #define ENABLE_GNUVG_PROFILER
 #include <VG/gnuVG_profiler.hh>
+#include <VG/vgu.h>
 
 namespace gnuVG {
 
@@ -111,6 +112,131 @@ namespace gnuVG {
 		return true;
 	}
 
+	int Font::get_fc_scale() {
+		VGfloat mtrx[9];
+		vgGetMatrix(mtrx);
+
+		VGfloat p[] = {0.0, 1.0, 1.0};
+		VGfloat pp[] = {0.0, 0.0, 1.0};
+		pp[0] = mtrx[0] * p[0] + mtrx[3] * p[1] + mtrx[6] * p[2];
+		pp[1] = mtrx[1] * p[0] + mtrx[4] * p[1] + mtrx[7] * p[2];
+		pp[2] = mtrx[2] * p[0] + mtrx[5] * p[1] + mtrx[8] * p[2];
+
+		VGfloat l = sqrtf(pp[0] * pp[0] + pp[1] * pp[1]);
+
+		l = l;
+
+		return (int)l;
+	}
+
+	FontCache* Font::get_font_cache(int fc_scale) {
+		auto fc_p = font_caches.find(fc_scale);
+		if(fc_p != font_caches.end()) {
+			return (*fc_p).second;
+		}
+
+		auto fc = new FontCache(256, 256);
+		font_caches[fc_scale] = fc;
+		return fc;
+	}
+
+	void Font::prefill_cache(int fc_scale, const std::vector<VGuint> &glyph_indices) {
+		auto fc = get_font_cache(fc_scale);
+
+		GNUVG_ERROR("::prefill_cache()\n");
+
+		// remember old matrix
+		VGfloat mtrx[9];
+		vgGetMatrix(mtrx);
+
+		float scale = (float)fc_scale;
+		scale /=  GNUVG_FONT_PIXELSIZE;
+
+		VGfloat min_x, min_y, width, height;
+
+		auto ctx = Context::get_current();
+		if(ctx == nullptr)
+			return;
+		vgSeti(VG_MATRIX_MODE, VG_MATRIX_GLYPH_USER_TO_SURFACE);
+
+		static VGPath temp_path = VG_INVALID_HANDLE;
+		if(temp_path == VG_INVALID_HANDLE) {
+			temp_path = vgCreatePath(VG_PATH_FORMAT_STANDARD, VG_PATH_DATATYPE_F,
+						 1,0,0,0, VG_PATH_CAPABILITY_ALL);
+		}
+		auto tepa = Object::get<Path>(temp_path);
+
+		for(auto gi : glyph_indices) {
+			FontCache::Rect result_ignored;
+			if(!fc->lookup(gi, result_ignored)) {
+				GNUVG_ERROR("Caching %d\n", gi);
+				auto g = glyphs[gi];
+
+				vgLoadIdentity();
+				vgScale(scale, scale);
+				vgTranslate(g->origin[0], g->origin[1]);
+				ctx->select_conversion_matrix(Context::GNUVG_MATRIX_GLYPH_USER_TO_SURFACE);
+
+				g->path->vgPathTransformedBounds(&min_x, &min_y,
+								 &width, &height);
+				GNUVG_ERROR("bounds[%f, %f->%f, %f]\n", min_x, min_y, width, height);
+
+				auto r = fc->pack(gi, min_x, min_y, width + 4.0, height + 4.0);
+
+				GNUVG_ERROR("    result [%d, %d]->[%d, %d] - %s.\n",
+					    r.x, r.y, r.width, r.height,
+					    r.rotated ? "rotated" : "NOT rotated");
+
+				vgLoadIdentity();
+				if(r.rotated)
+					vgRotate(90.0);
+				vgTranslate(min_x, min_y);
+				vgScale(scale, scale);
+				vgTranslate(g->origin[0], g->origin[1]);
+
+				GNUVG_ERROR("Filling glyph path to cache..\n");
+				ctx->select_conversion_matrix(Context::GNUVG_MATRIX_GLYPH_USER_TO_SURFACE);
+				g->path->vgDrawPath(VG_FILL_PATH);
+			} else {
+				auto g = glyphs[gi];
+				auto r = result_ignored;
+
+				GNUVG_ERROR("    scale: %f\n", scale);
+				GNUVG_ERROR("    rendering test [%d, %d] + [%d, %d]->[%d, %d] - %s.\n",
+					    r.x, r.y,
+					    r.offset_x, r.offset_y,
+					    r.width, r.height,
+					    r.rotated ? "rotated" : "NOT rotated");
+
+				vgLoadIdentity();
+				vgTranslate(0.0, 400.0);
+				vgTranslate(r.x, r.y);
+
+				if(r.rotated) {
+					vgTranslate(0.0, r.height);
+					vgRotate(-90.0);
+				}
+				vgTranslate(2.0 - r.offset_x, 2.0 - r.offset_y);
+
+				vgScale(scale, scale);
+				vgTranslate(g->origin[0], g->origin[1]);
+
+				ctx->select_conversion_matrix(Context::GNUVG_MATRIX_GLYPH_USER_TO_SURFACE);
+				g->path->vgDrawPath(VG_FILL_PATH);
+
+				vgClearPath(temp_path, VG_PATH_CAPABILITY_ALL);
+				vguRect(temp_path, 0.0, 0.0, r.width, r.height);
+				vgLoadIdentity();
+				vgTranslate(0.0, 400.0);
+				vgTranslate(r.x, r.y);
+
+				ctx->select_conversion_matrix(Context::GNUVG_MATRIX_GLYPH_USER_TO_SURFACE);
+				tepa->vgDrawPath(VG_STROKE_PATH);
+			}
+		}
+		vgLoadMatrix(mtrx);
+	}
+
 	// XXX this only handles ISO-8859-1 currently
 	void Font::gnuVG_render_text(
 		VGfloat size, gnuVGTextAnchor anchor,
@@ -174,8 +300,15 @@ namespace gnuVG {
 
 		vgGetMatrix(mtrx);
 		vgTranslate(x_anchor, y_anchor);
-		vgScale(conversion_factor, -conversion_factor);
+		GNUVG_ERROR("Conversion factor: %f\n", conversion_factor);
+		GNUVG_ERROR("GNUVG_FONT_PIXELSIZE: %d\n", GNUVG_FONT_PIXELSIZE);
+		GNUVG_ERROR("REQ SIZE: %f\n", size);
+		vgScale(conversion_factor, conversion_factor);
 
+		auto fc_scale = get_fc_scale();
+		GNUVG_ERROR("fc_scale: %d\n", fc_scale);
+		prefill_cache(fc_scale, glyph_indices);
+/*
 		VGfloat* adj_x = adjustments_x.size() == 0 ? nullptr : adjustments_x.data();
 
 		vgDrawGlyphs(num_chars,
@@ -184,7 +317,7 @@ namespace gnuVG {
 			     nullptr,
 			     VG_FILL_PATH,
 			     VG_FALSE);
-
+*/
 		vgLoadMatrix(mtrx);
 
 		vgSeti(VG_MATRIX_MODE, old_matrixmode);
