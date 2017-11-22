@@ -29,6 +29,19 @@
 
 namespace gnuVG {
 
+	class FailedToCreateFontCacheException {};
+
+	FontCache::FontCache(int w, int h) : SkylineBinPack(w, h, true) {
+		auto ctx = Context::get_current();
+		if(!ctx->create_framebuffer(&framebuffer, VG_sRGBA_8888, w, h, VG_IMAGE_QUALITY_BETTER))
+			throw FailedToCreateFontCacheException();
+
+		ctx->save_current_framebuffer();
+		ctx->render_to_framebuffer(&framebuffer);
+		ctx->trivial_fill_area(0, 0, w, h, 0.0, 0.0, 0.0, 0.0);
+		ctx->restore_current_framebuffer();
+	}
+
 	void Font::Glyph::set_path(std::shared_ptr<Path> _path,
 				   VGboolean _isHinted,
 				   const VGfloat _origin[2], const VGfloat _escapement[2]) {
@@ -135,7 +148,7 @@ namespace gnuVG {
 			return (*fc_p).second;
 		}
 
-		auto fc = new FontCache(256, 256);
+		auto fc = new FontCache(512, 512);
 		font_caches[fc_scale] = fc;
 		return fc;
 	}
@@ -145,10 +158,6 @@ namespace gnuVG {
 
 		GNUVG_ERROR("::prefill_cache()\n");
 
-		// remember old matrix
-		VGfloat mtrx[9];
-		vgGetMatrix(mtrx);
-
 		float scale = (float)fc_scale;
 		scale /=  GNUVG_FONT_PIXELSIZE;
 
@@ -157,7 +166,12 @@ namespace gnuVG {
 		auto ctx = Context::get_current();
 		if(ctx == nullptr)
 			return;
+		auto old_mtrx_mode = vgGeti(VG_MATRIX_MODE);
 		vgSeti(VG_MATRIX_MODE, VG_MATRIX_GLYPH_USER_TO_SURFACE);
+
+		// remember old matrix
+		VGfloat mtrx[9];
+		vgGetMatrix(mtrx);
 
 		static VGPath temp_path = VG_INVALID_HANDLE;
 		if(temp_path == VG_INVALID_HANDLE) {
@@ -165,6 +179,18 @@ namespace gnuVG {
 						 1,0,0,0, VG_PATH_CAPABILITY_ALL);
 		}
 		auto tepa = Object::get<Path>(temp_path);
+
+		ctx->save_current_framebuffer();
+		ctx->render_to_framebuffer(&(fc->framebuffer));
+
+		if(!(cache_render_paint)) {
+			cache_render_paint = Object::create<Paint>();
+			cache_render_paint->vgSetColor(0x000000ff); // RGBA
+		}
+		auto old_stroke_paint = vgGetPaint(VG_STROKE_PATH);
+		auto old_fill_paint = vgGetPaint(VG_FILL_PATH);
+
+		vgSetPaint(cache_render_paint->get_handle(), VG_FILL_PATH);
 
 		for(auto gi : glyph_indices) {
 			FontCache::Rect result_ignored;
@@ -183,33 +209,14 @@ namespace gnuVG {
 
 				auto r = fc->pack(gi, min_x, min_y, width + 4.0, height + 4.0);
 
+				if(r.width == 0)
+					continue; // couldn't fit
+
 				GNUVG_ERROR("    result [%d, %d]->[%d, %d] - %s.\n",
 					    r.x, r.y, r.width, r.height,
 					    r.rotated ? "rotated" : "NOT rotated");
 
 				vgLoadIdentity();
-				if(r.rotated)
-					vgRotate(90.0);
-				vgTranslate(min_x, min_y);
-				vgScale(scale, scale);
-				vgTranslate(g->origin[0], g->origin[1]);
-
-				GNUVG_ERROR("Filling glyph path to cache..\n");
-				ctx->select_conversion_matrix(Context::GNUVG_MATRIX_GLYPH_USER_TO_SURFACE);
-				g->path->vgDrawPath(VG_FILL_PATH);
-			} else {
-				auto g = glyphs[gi];
-				auto r = result_ignored;
-
-				GNUVG_ERROR("    scale: %f\n", scale);
-				GNUVG_ERROR("    rendering test [%d, %d] + [%d, %d]->[%d, %d] - %s.\n",
-					    r.x, r.y,
-					    r.offset_x, r.offset_y,
-					    r.width, r.height,
-					    r.rotated ? "rotated" : "NOT rotated");
-
-				vgLoadIdentity();
-				vgTranslate(0.0, 400.0);
 				vgTranslate(r.x, r.y);
 
 				if(r.rotated) {
@@ -223,18 +230,23 @@ namespace gnuVG {
 
 				ctx->select_conversion_matrix(Context::GNUVG_MATRIX_GLYPH_USER_TO_SURFACE);
 				g->path->vgDrawPath(VG_FILL_PATH);
-
-				vgClearPath(temp_path, VG_PATH_CAPABILITY_ALL);
-				vguRect(temp_path, 0.0, 0.0, r.width, r.height);
-				vgLoadIdentity();
-				vgTranslate(0.0, 400.0);
-				vgTranslate(r.x, r.y);
-
-				ctx->select_conversion_matrix(Context::GNUVG_MATRIX_GLYPH_USER_TO_SURFACE);
-				tepa->vgDrawPath(VG_STROKE_PATH);
 			}
 		}
+		vgSetPaint(old_stroke_paint, VG_STROKE_PATH);
+		vgSetPaint(old_fill_paint, VG_FILL_PATH);
+
+		ctx->restore_current_framebuffer();
 		vgLoadMatrix(mtrx);
+
+		// just for testing
+		vgSeti(VG_MATRIX_MODE, VG_MATRIX_IMAGE_USER_TO_SURFACE);
+		vgGetMatrix(mtrx);
+		vgLoadIdentity();
+		ctx->trivial_render_framebuffer(&(fc->framebuffer), 0, 0, VG_TILE_FILL);
+		vgLoadMatrix(mtrx);
+
+		// restore matrix mode
+		vgSeti(VG_MATRIX_MODE, old_mtrx_mode);
 	}
 
 	// XXX this only handles ISO-8859-1 currently

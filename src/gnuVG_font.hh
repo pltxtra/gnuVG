@@ -24,6 +24,7 @@
 #include "gnuVG_object.hh"
 #include "gnuVG_image.hh"
 #include "gnuVG_path.hh"
+#include "gnuVG_paint.hh"
 #include "skyline/SkylineBinPack.h"
 
 #include <libtess2.h>
@@ -41,6 +42,8 @@ namespace gnuVG {
 
 	class FontCache : public rbp::SkylineBinPack {
 	public:
+		Context::FrameBuffer framebuffer;
+
 		struct Rect {
 			int x, y, width, height;
 			int offset_x, offset_y;
@@ -51,7 +54,7 @@ namespace gnuVG {
 		std::map<VGuint, Rect> cache;
 
 	public:
-		FontCache(int w, int h) : SkylineBinPack(w, h, true) {}
+		FontCache(int w, int h);
 		virtual ~FontCache() {}
 
 		Rect pack(VGuint charcode, int offset_x, int offset_y, int w, int h) {
@@ -67,7 +70,8 @@ namespace gnuVG {
 
 			rr.rotated = (w != h && rr.width != w) ? true : false;
 
-			cache[charcode] = rr;
+			if(rr.width != 0 && rr.height != 0)
+				cache[charcode] = rr;
 
 			return rr;
 		}
@@ -104,6 +108,8 @@ namespace gnuVG {
 			void set_image(std::shared_ptr<Image> _image,
 				       const VGfloat _origin[2], const VGfloat _escapement[2]);
 		};
+
+		std::shared_ptr<Paint> cache_render_paint;
 
 		std::vector<Glyph*> glyphs;
 		std::vector<VGfloat> adjustments_x;

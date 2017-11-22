@@ -171,7 +171,8 @@ namespace gnuVG {
 		void trivial_render_framebuffer(const FrameBuffer* framebuffer,
 						int gaussian_width = 1,
 						int gaussian_height = 1,
-						VGTilingMode = VG_TILE_FILL);
+						VGTilingMode = VG_TILE_FILL,
+						int src_width = -1, int src_height = -1);
 		void prepare_framebuffer_matrix(const FrameBuffer* frbuf);
 		void select_conversion_matrix(MatrixMode conversion_matrix);
 		void use_pipeline(gnuVGPipeline new_pipeline, VGPaintMode new_mode);
@@ -203,7 +204,8 @@ namespace gnuVG {
 						     const FrameBuffer* src,
 						     VGint dx, VGint dy,
 						     VGint sx, VGint sy,
-						     VGint width, VGint height);
+						     VGint width, VGint height,
+						     bool do_blend = false);
 		void copy_framebuffer_to_memory(const FrameBuffer* src,
 						void *memory, VGint stride,
 						VGImageFormat fmt,

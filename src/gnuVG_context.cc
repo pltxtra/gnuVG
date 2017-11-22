@@ -910,9 +910,10 @@ namespace gnuVG {
 	void Context::trivial_render_framebuffer(const FrameBuffer* framebuffer,
 						 int gaussian_width,
 						 int gaussian_height,
-						 VGTilingMode tiling_mode) {
-		auto w = (VGfloat)framebuffer->width;
-		auto h = (VGfloat)framebuffer->height;
+						 VGTilingMode tiling_mode,
+						 int src_width, int src_height) {
+		auto w = (VGfloat)((src_width == -1) ? framebuffer->width : src_width);
+		auto h = (VGfloat)((src_height == -1) ? framebuffer->height : src_height);
 
 		// calculate corners of image
 		auto c1_p = matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].map_point(Point(0.0f, 0.0f));
@@ -1570,7 +1571,54 @@ namespace gnuVG {
 						      const FrameBuffer* src,
 						      VGint dx, VGint dy,
 						      VGint sx, VGint sy,
-						      VGint width, VGint height) {
+						      VGint _width, VGint _height,
+						      bool do_blend) {
+		save_current_framebuffer();
+
+		render_to_framebuffer(dst);
+
+		auto caps = Shader::do_pattern;
+		auto shader = Shader::get_shader(caps);
+
+		if(do_blend)
+			shader->set_blending(Shader::blend_src_over);
+		else
+			shader->set_blending(Shader::blend_src);
+
+		shader->set_pattern_texture(src->texture);
+		shader->set_pattern_size(_width, _height);
+		shader->set_wrap_mode(GL_CLAMP_TO_EDGE);
+
+		GLfloat mtrx[] = {
+			1.0, 0.0, 0.0, (GLfloat)(sx - dx),
+			0.0, 1.0, 0.0, (GLfloat)(sy - dy),
+			0.0, 0.0, 1.0,     0.0,
+			0.0, 0.0, 0.0,     1.0
+		};
+
+		shader->set_pattern_matrix(mtrx);
+
+		VGfloat x = (VGfloat)dx;
+		VGfloat y = (VGfloat)dy;
+		VGfloat width = (VGfloat)_width;
+		VGfloat height = (VGfloat)_height;
+
+		GLfloat vertices[] = {
+			x,         y,
+			x + width, y,
+			x + width, y + height,
+			x        , y + height
+		};
+
+		GLuint indices[] = {
+			0, 1, 2,
+			0, 2, 3
+		};
+
+		shader->load_2dvertex_array(vertices, 0);
+		shader->render_elements(indices, 6);
+
+		restore_current_framebuffer();
 	}
 
 	void Context::copy_framebuffer_to_memory(const FrameBuffer* src,
