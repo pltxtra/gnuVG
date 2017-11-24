@@ -42,6 +42,7 @@ namespace gnuVG {
 		struct FrameBuffer {
 			GLuint framebuffer = 0, texture = 0, stencil = 0;
 			VGint width = 128, height = 128;
+			VGint subset_x = -1, subset_y = -1, subset_width = -1, subset_height = -1;
 		};
 
 		enum gnuVGFrameBuffer {
@@ -171,8 +172,7 @@ namespace gnuVG {
 		void trivial_render_framebuffer(const FrameBuffer* framebuffer,
 						int gaussian_width = 1,
 						int gaussian_height = 1,
-						VGTilingMode = VG_TILE_FILL,
-						int src_width = -1, int src_height = -1);
+						VGTilingMode = VG_TILE_FILL);
 		void prepare_framebuffer_matrix(const FrameBuffer* frbuf);
 		void select_conversion_matrix(MatrixMode conversion_matrix);
 		void use_pipeline(gnuVGPipeline new_pipeline, VGPaintMode new_mode);

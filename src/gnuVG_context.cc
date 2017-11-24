@@ -910,10 +910,16 @@ namespace gnuVG {
 	void Context::trivial_render_framebuffer(const FrameBuffer* framebuffer,
 						 int gaussian_width,
 						 int gaussian_height,
-						 VGTilingMode tiling_mode,
-						 int src_width, int src_height) {
-		auto w = (VGfloat)((src_width == -1) ? framebuffer->width : src_width);
-		auto h = (VGfloat)((src_height == -1) ? framebuffer->height : src_height);
+						 VGTilingMode tiling_mode) {
+		VGfloat w, h;
+
+		if(framebuffer->subset_width >= 0) {
+			w = (VGfloat)(framebuffer->subset_width);
+			h = (VGfloat)(framebuffer->subset_height);
+		} else {
+			w = (VGfloat)(framebuffer->width);
+			h = (VGfloat)(framebuffer->height);
+		}
 
 		// calculate corners of image
 		auto c1_p = matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].map_point(Point(0.0f, 0.0f));
@@ -1116,6 +1122,8 @@ namespace gnuVG {
 		 * coordinates back to texture space coordinates.
 		 */
 		Matrix temp_a, temp_b;
+		if(fbuf->subset_x >= 0)
+			temp_a.translate(-fbuf->subset_x, -fbuf->subset_y);
 		temp_a.scale(fbuf->width, fbuf->height);
 		temp_b.multiply(final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE], temp_a);
 		temp_b.invert();

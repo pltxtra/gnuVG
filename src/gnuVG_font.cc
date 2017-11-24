@@ -242,7 +242,14 @@ namespace gnuVG {
 		vgSeti(VG_MATRIX_MODE, VG_MATRIX_IMAGE_USER_TO_SURFACE);
 		vgGetMatrix(mtrx);
 		vgLoadIdentity();
-		ctx->trivial_render_framebuffer(&(fc->framebuffer), 0, 0, VG_TILE_FILL);
+		vgTranslate(150.0, 450.0);
+
+#if 1
+		auto fb = fc->framebuffer;
+		fb.subset_x = 50; fb.subset_y = 0;
+		fb.subset_width = 100; fb.subset_height = 100;
+		ctx->trivial_render_framebuffer(&fb, 1, 1, VG_TILE_FILL);
+#endif
 		vgLoadMatrix(mtrx);
 
 		// restore matrix mode
