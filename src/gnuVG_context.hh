@@ -165,6 +165,11 @@ namespace gnuVG {
 		void trivial_render_elements(
 			GLfloat *vertices, GLuint *indices, GLsizei indices_count,
 			VGfloat r, VGfloat g, VGfloat b, VGfloat a);
+		void render_texture_alpha_triangle_array(const FrameBuffer *fb,
+							 const GLfloat *ver_c_2d, GLint ver_stride_2d,
+							 const GLfloat *tex_c_2d, GLint tex_stride_2d,
+							 const GLuint *indices, GLsizei nr_indices,
+							 const GLfloat *texture_matrix_3by3);
 		void trivial_fill_area(
 			VGint x, VGint y, VGint width, VGint height,
 			VGfloat r, VGfloat g, VGfloat b, VGfloat a);

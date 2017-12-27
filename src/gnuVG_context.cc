@@ -1084,6 +1084,40 @@ namespace gnuVG {
 		active_shader->render_elements(indices, indices_count);
 	}
 
+	void Context::render_texture_alpha_triangle_array(const FrameBuffer *fb,
+							  const GLfloat *ver_c_2d, GLint ver_stride_2d,
+							  const GLfloat *tex_c_2d, GLint tex_stride_2d,
+							  const GLuint *indices, GLsizei nr_indices,
+							  const GLfloat *texture_matrix_3by3) {
+
+		Matrix *m = &screen_matrix;
+		GLfloat mat[] = {
+			m->a, m->b, 0.0f, m->c,
+			m->d, m->e, 0.0f, m->f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			m->g, m->h, 0.0f, m->i
+		};
+
+		active_shader = Shader::get_shader(
+			Shader::do_flat_color |
+			(do_color_transform ? Shader::do_color_transform : 0)
+			| Shader::do_texture_alpha
+			);
+		active_shader->use_shader();
+		active_shader->set_blending(blend_mode);
+		active_shader->set_matrix(mat);
+		if(do_color_transform)
+			active_shader->set_color_transform(
+				color_transform_scale,
+				color_transform_bias);
+		active_shader->load_2dvertex_array(ver_c_2d, ver_stride_2d);
+		active_shader->load_2dvertex_texture_array(tex_c_2d, tex_stride_2d);
+		active_shader->set_texture(fb->texture);
+		active_shader->set_texture_matrix(texture_matrix_3by3);
+		active_shader->set_color(fill_paint->color.c);
+		active_shader->render_elements(indices, nr_indices);
+	}
+
 	void Context::trivial_fill_area(
 		VGint _x, VGint _y, VGint _width, VGint _height,
 		VGfloat r, VGfloat g, VGfloat b, VGfloat a) {

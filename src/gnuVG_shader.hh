@@ -35,6 +35,7 @@ namespace gnuVG {
 			do_linear_gradient	= 0x00000001,
 			do_radial_gradient	= 0x00000002,
 			do_pattern		= 0x00000003,
+			do_texture		= 0x00000004,
 
 			primary_mode_mask	= 0x0000000f,
 
@@ -51,6 +52,7 @@ namespace gnuVG {
 			do_horizontal_gaussian	= 0x00000400,
 			do_vertical_gaussian	= 0x00000800,
 			do_color_transform	= 0x01000000,
+			do_texture_alpha	= 0x02000000,
 
 			// gaussian kernel configuration
 			gauss_krn_diameter_mask = 0x00ff0000,
@@ -103,6 +105,9 @@ namespace gnuVG {
 				    const GLfloat *colors) const;
 
 		void load_2dvertex_array(const GLfloat *verts, GLint stride) const;
+		void load_2dvertex_texture_array(const GLfloat *verts, GLint stride) const;
+		void set_texture(GLuint tex) const;
+		void set_texture_matrix(const GLfloat *mtrx_3by3) const;
 		void render_triangles(GLint first, GLsizei count) const;
 		void render_elements(const GLuint *indices, GLsizei nr_indices) const;
 
@@ -115,6 +120,10 @@ namespace gnuVG {
 
 		/* shader handles */
 		GLint position_handle;
+
+		GLint textureCoord_handle;
+		GLint textureMatrix_handle;
+		GLint textureSampler_handle;
 
 		GLint ColorHandle;
 		GLint Matrix;

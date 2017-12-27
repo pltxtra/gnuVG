@@ -39,7 +39,15 @@ namespace gnuVG {
 		ctx->save_current_framebuffer();
 		ctx->render_to_framebuffer(&framebuffer);
 		ctx->trivial_fill_area(0, 0, w, h, 0.0, 0.0, 0.0, 0.0);
+//		ctx->trivial_fill_area(0, 0, w, h, 1.0, 0.0, 0.0, 1.0);
+//		ctx->trivial_fill_area(w / 2, h / 2, w / 2, h / 2, 0.0, 1.0, 0.0, 1.0);
 		ctx->restore_current_framebuffer();
+
+		GLfloat w_f = (float)w;
+		GLfloat h_f= (float)h;
+		tex_mtrx[0] = 1.0 / w_f; tex_mtrx[3] = 0.0      ; tex_mtrx[6] = 0.0;
+		tex_mtrx[1] = 0.0;       tex_mtrx[4] = 1.0 / h_f; tex_mtrx[7] = 0.0;
+		tex_mtrx[2] = 0.0;       tex_mtrx[5] = 0.0;       tex_mtrx[8] = 1.0;
 	}
 
 	void Font::Glyph::set_path(std::shared_ptr<Path> _path,
@@ -125,16 +133,28 @@ namespace gnuVG {
 		return true;
 	}
 
+	static inline void p_mul(VGfloat p[], VGfloat pp[], VGfloat mtrx[]) {
+		pp[0] = mtrx[0] * p[0] + mtrx[3] * p[1] + mtrx[6] * p[2];
+		pp[1] = mtrx[1] * p[0] + mtrx[4] * p[1] + mtrx[7] * p[2];
+		pp[2] = mtrx[2] * p[0] + mtrx[5] * p[1] + mtrx[8] * p[2];
+	}
+
 	int Font::get_fc_scale() {
 		VGfloat mtrx[9];
 		vgGetMatrix(mtrx);
 
-		VGfloat p[] = {0.0, 1.0, 1.0};
-		VGfloat pp[] = {0.0, 0.0, 1.0};
-		pp[0] = mtrx[0] * p[0] + mtrx[3] * p[1] + mtrx[6] * p[2];
-		pp[1] = mtrx[1] * p[0] + mtrx[4] * p[1] + mtrx[7] * p[2];
-		pp[2] = mtrx[2] * p[0] + mtrx[5] * p[1] + mtrx[8] * p[2];
+		VGfloat p_1[] = {0.0, 0.0, 0.0};
+		VGfloat pp1[] = {0.0, 0.0, 1.0};
+		VGfloat p_2[] = {0.0, 1.0, 1.0};
+		VGfloat pp2[] = {0.0, 0.0, 1.0};
+		p_mul(p_1, pp1, mtrx);
+		p_mul(p_2, pp2, mtrx);
 
+		VGfloat pp[] = {
+			pp2[0] - pp1[0],
+			pp2[1] - pp1[1],
+			pp2[2] - pp1[2]
+		};
 		VGfloat l = sqrtf(pp[0] * pp[0] + pp[1] * pp[1]);
 
 		l = l;
@@ -156,7 +176,7 @@ namespace gnuVG {
 	void Font::prefill_cache(int fc_scale, const std::vector<VGuint> &glyph_indices) {
 		auto fc = get_font_cache(fc_scale);
 
-		GNUVG_ERROR("::prefill_cache()\n");
+		GNUVG_ERROR("::prefill_cache() -- %d\n", fc_scale);
 
 		float scale = (float)fc_scale;
 		scale /=  GNUVG_FONT_PIXELSIZE;
@@ -166,6 +186,12 @@ namespace gnuVG {
 		auto ctx = Context::get_current();
 		if(ctx == nullptr)
 			return;
+
+		auto old_clr_transform = vgGeti(VG_COLOR_TRANSFORM);
+		VGfloat old_clr_transform_values[8];
+		vgGetfv(VG_COLOR_TRANSFORM_VALUES, 8, old_clr_transform_values);
+		vgSeti(VG_COLOR_TRANSFORM, VG_FALSE);
+
 		auto old_mtrx_mode = vgGeti(VG_MATRIX_MODE);
 		vgSeti(VG_MATRIX_MODE, VG_MATRIX_GLYPH_USER_TO_SURFACE);
 
@@ -185,7 +211,7 @@ namespace gnuVG {
 
 		if(!(cache_render_paint)) {
 			cache_render_paint = Object::create<Paint>();
-			cache_render_paint->vgSetColor(0x000000ff); // RGBA
+			cache_render_paint->vgSetColor(0xffffffff); // RGBA
 		}
 		auto old_stroke_paint = vgGetPaint(VG_STROKE_PATH);
 		auto old_fill_paint = vgGetPaint(VG_FILL_PATH);
@@ -207,7 +233,7 @@ namespace gnuVG {
 								 &width, &height);
 				GNUVG_ERROR("bounds[%f, %f->%f, %f]\n", min_x, min_y, width, height);
 
-				auto r = fc->pack(gi, min_x, min_y, width + 4.0, height + 4.0);
+				auto r = fc->pack(gi, g->origin[0], g->origin[1], width + 4.0, height + 4.0);
 
 				if(r.width == 0)
 					continue; // couldn't fit
@@ -223,7 +249,7 @@ namespace gnuVG {
 					vgTranslate(0.0, r.height);
 					vgRotate(-90.0);
 				}
-				vgTranslate(2.0 - r.offset_x, 2.0 - r.offset_y);
+				vgTranslate(2.0 - min_x, 2.0 - min_y);
 
 				vgScale(scale, scale);
 				vgTranslate(g->origin[0], g->origin[1]);
@@ -242,15 +268,68 @@ namespace gnuVG {
 		vgSeti(VG_MATRIX_MODE, VG_MATRIX_IMAGE_USER_TO_SURFACE);
 		vgGetMatrix(mtrx);
 		vgLoadIdentity();
-		vgTranslate(150.0, 450.0);
+		vgTranslate(0.0, 0.0);
 
-#if 1
+#if 0
 		auto fb = fc->framebuffer;
 		fb.subset_x = 50; fb.subset_y = 0;
 		fb.subset_width = 100; fb.subset_height = 100;
 		ctx->trivial_render_framebuffer(&fb, 1, 1, VG_TILE_FILL);
 #endif
+#if 0
+		GNUVG_ERROR("Hejdur Z\n");
+		GLfloat ver[] = {
+			0.0,     0.0,
+			0.0,   400.0,
+			400.0, 400.0,
+			400.0,   0.0,
+
+			350.0,     0.0,
+			350.0,   400.0,
+			750.0,   400.0,
+			750.0,     0.0
+		};
+
+		GLfloat tex[] = {
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0,
+
+			0.0, 0.0,
+			0.0, 1.0,
+			1.0, 1.0,
+			1.0, 0.0
+		};
+
+		GLuint ind[] = {
+			0, 1, 2,
+			0, 2, 3,
+
+			4, 5, 6,
+			4, 6, 7,
+		};
+
+		GLfloat vmt[] = {
+			1.0, 0.0, 0.0,
+			0.0, 1.0, 0.0,
+			0.0, 0.0, 1.0
+		};
+
+		ctx->select_conversion_matrix(Context::GNUVG_MATRIX_GLYPH_USER_TO_SURFACE);
+		ctx->render_texture_alpha_triangle_array(
+			&(fc->framebuffer),
+			ver, 0,
+			tex, 0,
+			ind, 12,
+			vmt
+			);
+
+#endif
 		vgLoadMatrix(mtrx);
+
+		vgSetfv(VG_COLOR_TRANSFORM_VALUES, 8, old_clr_transform_values);
+		vgSeti(VG_COLOR_TRANSFORM, old_clr_transform);
 
 		// restore matrix mode
 		vgSeti(VG_MATRIX_MODE, old_mtrx_mode);
@@ -327,16 +406,15 @@ namespace gnuVG {
 		auto fc_scale = get_fc_scale();
 		GNUVG_ERROR("fc_scale: %d\n", fc_scale);
 		prefill_cache(fc_scale, glyph_indices);
-/*
-		VGfloat* adj_x = adjustments_x.size() == 0 ? nullptr : adjustments_x.data();
 
+		VGfloat* adj_x = adjustments_x.size() == 0 ? nullptr : adjustments_x.data();
 		vgDrawGlyphs(num_chars,
 			     glyph_indices.data(),
 			     adj_x,
 			     nullptr,
 			     VG_FILL_PATH,
 			     VG_FALSE);
-*/
+
 		vgLoadMatrix(mtrx);
 
 		vgSeti(VG_MATRIX_MODE, old_matrixmode);
@@ -439,6 +517,91 @@ namespace gnuVG {
 		Context::get_current()->adjust_glyph_origin(glyph->escapement);
 	}
 
+	static VGfloat cord_cache_buffer[] = {0.0, 0.0};
+	static std::vector<VGfloat> vrtc_cache_buffer; // vertices
+	static std::vector<VGfloat> txtc_cache_buffer; // texture coordinates
+	static std::vector<VGuint>  indc_cache_buffer; // indices
+
+	static void reset_cache_buffer() {
+		cord_cache_buffer[0] = 0.0;
+		cord_cache_buffer[1] = 0.0;
+		vrtc_cache_buffer.clear();
+		txtc_cache_buffer.clear();
+		indc_cache_buffer.clear();
+	}
+
+	inline static void push_coords(std::vector<GLfloat> &a, GLfloat x, GLfloat y) {
+//		GNUVG_ERROR(" (%d) (%f, %f)\n", a.size() / 2, x, y);
+		a.push_back(x); a.push_back(y);
+	}
+
+	static void push_to_cache_buffer(const FontCache::Rect &data) {
+		int i = vrtc_cache_buffer.size() / 2;
+
+		const auto x = cord_cache_buffer[0] - data.offset_x;
+		const auto y = cord_cache_buffer[1] - data.offset_y;
+		const auto w = data.width;
+		const auto h = data.height;
+		const auto x_t = data.x;
+		const auto y_t = data.y;
+
+		if(data.rotated) {
+//			GNUVG_ERROR("---NEW FROM CACHE: (rotated)\n");
+			// push vertice coords
+			push_coords(vrtc_cache_buffer, x    , y);
+			push_coords(vrtc_cache_buffer, x    , y + w);
+			push_coords(vrtc_cache_buffer, x + h, y + w);
+			push_coords(vrtc_cache_buffer, x + h, y);
+
+//			GNUVG_ERROR("                   (rotated)\n");
+			// push texture coords
+			push_coords(txtc_cache_buffer, x_t    , y_t + h);
+			push_coords(txtc_cache_buffer, x_t + w, y_t + h);
+			push_coords(txtc_cache_buffer, x_t + w, y_t);
+			push_coords(txtc_cache_buffer, x_t    , y_t);
+		} else {
+//			GNUVG_ERROR("---NEW FROM CACHE: ()\n");
+			// push vertice coords
+			push_coords(vrtc_cache_buffer, x    , y);
+			push_coords(vrtc_cache_buffer, x    , y + h);
+			push_coords(vrtc_cache_buffer, x + w, y + h);
+			push_coords(vrtc_cache_buffer, x + w, y);
+
+//			GNUVG_ERROR("                   ()\n");
+			// push texture coords
+			push_coords(txtc_cache_buffer, x_t    , y_t);
+			push_coords(txtc_cache_buffer, x_t    , y_t + h);
+			push_coords(txtc_cache_buffer, x_t + w, y_t + h);
+			push_coords(txtc_cache_buffer, x_t + w, y_t);
+		}
+
+		// push indices
+		indc_cache_buffer.push_back(i);
+		indc_cache_buffer.push_back(i + 1);
+		indc_cache_buffer.push_back(i + 2);
+
+		indc_cache_buffer.push_back(i);
+		indc_cache_buffer.push_back(i + 2);
+		indc_cache_buffer.push_back(i + 3);
+	}
+
+	static void render_cache_buffer(Context *ctx, const FontCache *fc) {
+		if(indc_cache_buffer.size() == 0) return;
+
+//		GNUVG_ERROR("   render %d indices...\n", indc_cache_buffer.size());
+//		for(auto k : indc_cache_buffer) {
+//			GNUVG_ERROR("   %d\n", k);
+//		}
+
+		ctx->render_texture_alpha_triangle_array(
+			&(fc->framebuffer),
+			vrtc_cache_buffer.data(), 0,
+			txtc_cache_buffer.data(), 0,
+			indc_cache_buffer.data(), indc_cache_buffer.size(),
+			fc->get_texture_matrix()
+			);
+	}
+
 	void Font::vgDrawGlyphs(VGint glyphCount,
 				const VGuint *glyphIndices,
 				const VGfloat *adjustments_x,
@@ -451,21 +614,25 @@ namespace gnuVG {
 		if(ctx == nullptr)
 			return;
 
+		auto fc_scale = get_fc_scale();
+		GNUVG_ERROR("  --- using fc_scale %d\n", fc_scale);
+		fc_scale = 100;
+		float scale = (float)fc_scale;
+		scale /=  GNUVG_FONT_PIXELSIZE;
+		auto fc = get_font_cache(fc_scale);
+
 		ctx->select_conversion_matrix(Context::GNUVG_MATRIX_GLYPH_USER_TO_SURFACE);
+
+		reset_cache_buffer();
 
 		auto gly_p = glyphs.data();
 		for(auto k = 0; k < glyphCount; ++k) {
 			ADD_GNUVG_PROFILER_PROBE(render_glyph);
 			auto glyphIndex = glyphIndices[k];
+
+			FontCache::Rect cached_result;
 			if(glyphIndex < glyphs.size()) {
 				auto glyph = gly_p[glyphIndex];
-
-				Context::get_current()->use_glyph_origin_as_pre_translation(glyph->origin);
-
-				if(glyph->path != VG_INVALID_HANDLE) {
-					ADD_GNUVG_PROFILER_PROBE(glyph_drawPath);
-					glyph->path->vgDrawPath(paintModes);
-				}
 
 				VGfloat adjustment[] = {
 					glyph->escapement[0],
@@ -474,9 +641,31 @@ namespace gnuVG {
 				if(adjustments_x) adjustment[0] += adjustments_x[k];
 				if(adjustments_y) adjustment[1] += adjustments_y[k];
 
+				GNUVG_ERROR("Looking up %d in cache.", glyphIndex);
+				if(fc->lookup(glyphIndex, cached_result)) {
+					GNUVG_ERROR("   %d was found.", glyphIndex);
+					push_to_cache_buffer(cached_result);
+					for(auto k = 0; k < 2; ++k) {
+						cord_cache_buffer[k] += scale * adjustment[k];
+					}
+				} else {
+					GNUVG_ERROR("   %d NOT found.", glyphIndex);
+					/*
+					Context::get_current()->use_glyph_origin_as_pre_translation(glyph->origin);
+
+					if(glyph->path != VG_INVALID_HANDLE) {
+						ADD_GNUVG_PROFILER_PROBE(glyph_drawPath);
+						glyph->path->vgDrawPath(paintModes);
+					}
+					*/
+				}
+
+
 				Context::get_current()->adjust_glyph_origin(adjustment);
 			}
 		}
+
+		render_cache_buffer(ctx, fc);
 	}
 };
 

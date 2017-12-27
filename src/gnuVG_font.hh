@@ -52,10 +52,15 @@ namespace gnuVG {
 
 	private:
 		std::map<VGuint, Rect> cache;
+		GLfloat tex_mtrx[9];
 
 	public:
 		FontCache(int w, int h);
 		virtual ~FontCache() {}
+
+		const GLfloat* get_texture_matrix() const {
+			return tex_mtrx;
+		}
 
 		Rect pack(VGuint charcode, int offset_x, int offset_y, int w, int h) {
 			auto r = Insert(w, h, LevelMinWasteFit);
