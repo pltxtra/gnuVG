@@ -133,7 +133,7 @@ namespace gnuVG {
 		return true;
 	}
 
-	static inline void p_mul(VGfloat p[], VGfloat pp[], VGfloat mtrx[]) {
+	static inline void p_mul(VGfloat pp[], VGfloat mtrx[], VGfloat p[]) {
 		pp[0] = mtrx[0] * p[0] + mtrx[3] * p[1] + mtrx[6] * p[2];
 		pp[1] = mtrx[1] * p[0] + mtrx[4] * p[1] + mtrx[7] * p[2];
 		pp[2] = mtrx[2] * p[0] + mtrx[5] * p[1] + mtrx[8] * p[2];
@@ -143,12 +143,12 @@ namespace gnuVG {
 		VGfloat mtrx[9];
 		vgGetMatrix(mtrx);
 
-		VGfloat p_1[] = {0.0, 0.0, 0.0};
-		VGfloat pp1[] = {0.0, 0.0, 1.0};
+		VGfloat p_1[] = {0.0, 0.0, 1.0};
 		VGfloat p_2[] = {0.0, 1.0, 1.0};
-		VGfloat pp2[] = {0.0, 0.0, 1.0};
-		p_mul(p_1, pp1, mtrx);
-		p_mul(p_2, pp2, mtrx);
+		VGfloat pp2[] = {0.0, 0.0, 0.0};
+		VGfloat pp1[] = {0.0, 0.0, 0.0};
+		p_mul(pp1, mtrx, p_1);
+		p_mul(pp2, mtrx, p_2);
 
 		VGfloat pp[] = {
 			pp2[0] - pp1[0],
@@ -157,16 +157,19 @@ namespace gnuVG {
 		};
 		VGfloat l = sqrtf(pp[0] * pp[0] + pp[1] * pp[1]);
 
-		l = l;
-
+		l = 1.0 / l;
+		GNUVG_ERROR("    => l = %f\n", l);
 		return (int)l;
 	}
 
 	FontCache* Font::get_font_cache(int fc_scale) {
 		auto fc_p = font_caches.find(fc_scale);
 		if(fc_p != font_caches.end()) {
+			GNUVG_ERROR("Found cache for %d\n", fc_scale);
 			return (*fc_p).second;
 		}
+
+		GNUVG_ERROR("Created new cache for %d\n", fc_scale);
 
 		auto fc = new FontCache(512, 512);
 		font_caches[fc_scale] = fc;
@@ -178,8 +181,7 @@ namespace gnuVG {
 
 		GNUVG_ERROR("::prefill_cache() -- %d\n", fc_scale);
 
-		float scale = (float)fc_scale;
-		scale /=  GNUVG_FONT_PIXELSIZE;
+		float scale = 1.0 / ((float)fc_scale);
 
 		VGfloat min_x, min_y, width, height;
 
@@ -235,8 +237,10 @@ namespace gnuVG {
 
 				auto r = fc->pack(gi, g->origin[0], g->origin[1], width + 4.0, height + 4.0);
 
-				if(r.width == 0)
+				if(r.width == 0) {
+					GNUVG_ERROR("Couldn't fit to cache.\n");
 					continue; // couldn't fit
+				}
 
 				GNUVG_ERROR("    result [%d, %d]->[%d, %d] - %s.\n",
 					    r.x, r.y, r.width, r.height,
@@ -262,21 +266,15 @@ namespace gnuVG {
 		vgSetPaint(old_fill_paint, VG_FILL_PATH);
 
 		ctx->restore_current_framebuffer();
-		vgLoadMatrix(mtrx);
 
+#if 0
 		// just for testing
+		vgLoadMatrix(mtrx);
 		vgSeti(VG_MATRIX_MODE, VG_MATRIX_IMAGE_USER_TO_SURFACE);
 		vgGetMatrix(mtrx);
 		vgLoadIdentity();
 		vgTranslate(0.0, 0.0);
 
-#if 0
-		auto fb = fc->framebuffer;
-		fb.subset_x = 50; fb.subset_y = 0;
-		fb.subset_width = 100; fb.subset_height = 100;
-		ctx->trivial_render_framebuffer(&fb, 1, 1, VG_TILE_FILL);
-#endif
-#if 0
 		GNUVG_ERROR("Hejdur Z\n");
 		GLfloat ver[] = {
 			0.0,     0.0,
@@ -326,6 +324,7 @@ namespace gnuVG {
 			);
 
 #endif
+
 		vgLoadMatrix(mtrx);
 
 		vgSetfv(VG_COLOR_TRANSFORM_VALUES, 8, old_clr_transform_values);
@@ -616,9 +615,7 @@ namespace gnuVG {
 
 		auto fc_scale = get_fc_scale();
 		GNUVG_ERROR("  --- using fc_scale %d\n", fc_scale);
-		fc_scale = 100;
-		float scale = (float)fc_scale;
-		scale /=  GNUVG_FONT_PIXELSIZE;
+		float scale = 1.0 / ((float)fc_scale);
 		auto fc = get_font_cache(fc_scale);
 
 		ctx->select_conversion_matrix(Context::GNUVG_MATRIX_GLYPH_USER_TO_SURFACE);
@@ -642,6 +639,7 @@ namespace gnuVG {
 				if(adjustments_y) adjustment[1] += adjustments_y[k];
 
 				GNUVG_ERROR("Looking up %d in cache.", glyphIndex);
+
 				if(fc->lookup(glyphIndex, cached_result)) {
 					GNUVG_ERROR("   %d was found.", glyphIndex);
 					push_to_cache_buffer(cached_result);
@@ -650,14 +648,13 @@ namespace gnuVG {
 					}
 				} else {
 					GNUVG_ERROR("   %d NOT found.", glyphIndex);
-					/*
+
 					Context::get_current()->use_glyph_origin_as_pre_translation(glyph->origin);
 
 					if(glyph->path != VG_INVALID_HANDLE) {
 						ADD_GNUVG_PROFILER_PROBE(glyph_drawPath);
 						glyph->path->vgDrawPath(paintModes);
 					}
-					*/
 				}
 
 
