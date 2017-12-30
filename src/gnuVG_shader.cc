@@ -79,8 +79,19 @@ namespace gnuVG {
 		}
 	}
 
-	void Shader::set_matrix(const GLfloat *mtrx) const {
-		glUniformMatrix4fv(Matrix, 1, GL_FALSE, mtrx);
+	void Shader::set_matrix(const GLfloat *m) const {
+		GNUVG_ERROR("shader matrix:\n"
+			    "  %f, %f, %f, %f\n"
+			    "  %f, %f, %f, %f\n"
+			    "  %f, %f, %f, %f\n"
+			    "  %f, %f, %f, %f\n",
+			    m[0], m[4], m[ 8], m[12],
+			    m[1], m[5], m[ 9], m[13],
+			    m[2], m[6], m[10], m[14],
+			    m[3], m[7], m[11], m[15]
+			);
+
+		glUniformMatrix4fv(Matrix, 1, GL_FALSE, m);
 	}
 
 	void Shader::set_pre_translation(const GLfloat *ptrans) const {

@@ -137,11 +137,22 @@ namespace gnuVG {
 		pp[0] = mtrx[0] * p[0] + mtrx[3] * p[1] + mtrx[6] * p[2];
 		pp[1] = mtrx[1] * p[0] + mtrx[4] * p[1] + mtrx[7] * p[2];
 		pp[2] = mtrx[2] * p[0] + mtrx[5] * p[1] + mtrx[8] * p[2];
+
+		GNUVG_ERROR("  p_mul\n"
+			    "  |%f|   | %f, %f, %f |   | %f |\n"
+			    "  |%f| = | %f, %f, %f | * | %f |\n"
+			    "  |%f|   | %f, %f, %f |   | %f |\n",
+			    pp[0], mtrx[0], mtrx[3], mtrx[6], p[0],
+			    pp[1], mtrx[1], mtrx[4], mtrx[7], p[1],
+			    pp[2], mtrx[2], mtrx[5], mtrx[8], p[2]
+			);
 	}
 
 	int Font::get_fc_scale() {
 		VGfloat mtrx[9];
 		vgGetMatrix(mtrx);
+
+		mtrx[6] = mtrx[7] = 0.0; // skip translation
 
 		VGfloat p_1[] = {0.0, 0.0, 1.0};
 		VGfloat p_2[] = {0.0, 1.0, 1.0};
@@ -155,6 +166,14 @@ namespace gnuVG {
 			pp2[1] - pp1[1],
 			pp2[2] - pp1[2]
 		};
+		GNUVG_ERROR("zup\n"
+			    " | %f |   | %f |   | %f |\n"
+			    " | %f | = | %f | - | %f |\n"
+			    " | %f |   | %f |   | %f |\n",
+			    pp[0], pp2[0], pp1[0],
+			    pp[1], pp2[1], pp1[1],
+			    pp[2], pp2[2], pp1[2]
+			);
 		VGfloat l = sqrtf(pp[0] * pp[0] + pp[1] * pp[1]);
 
 		l = 1.0 / l;
@@ -389,7 +408,7 @@ namespace gnuVG {
 		VGfloat gorigin[] = {0.0, 0.0};
 		vgSetfv(VG_GLYPH_ORIGIN, 2, gorigin);
 
-		VGfloat mtrx[9];
+		VGfloat mtrx[9], mtrx2[9];
 
 		VGint old_matrixmode;
 		old_matrixmode = vgGeti(VG_MATRIX_MODE);
@@ -407,6 +426,15 @@ namespace gnuVG {
 		prefill_cache(fc_scale, glyph_indices);
 
 		VGfloat* adj_x = adjustments_x.size() == 0 ? nullptr : adjustments_x.data();
+		vgGetMatrix(mtrx2);
+		GNUVG_ERROR("  mtrx2\n"
+			    "  %f, %f, %f\n"
+			    "  %f, %f, %f\n"
+			    "  %f, %f, %f\n",
+			    mtrx2[0], mtrx2[3], mtrx2[6],
+			    mtrx2[1], mtrx2[4], mtrx2[7],
+			    mtrx2[2], mtrx2[5], mtrx2[8]
+			);
 		vgDrawGlyphs(num_chars,
 			     glyph_indices.data(),
 			     adj_x,
@@ -534,13 +562,15 @@ namespace gnuVG {
 		a.push_back(x); a.push_back(y);
 	}
 
-	static void push_to_cache_buffer(const FontCache::Rect &data) {
+	static void push_to_cache_buffer(float fc_scale, const FontCache::Rect &data) {
 		int i = vrtc_cache_buffer.size() / 2;
 
-		const auto x = cord_cache_buffer[0] - data.offset_x;
-		const auto y = cord_cache_buffer[1] - data.offset_y;
-		const auto w = data.width;
-		const auto h = data.height;
+		const auto x = cord_cache_buffer[0] - fc_scale * data.offset_x;
+		const auto y = cord_cache_buffer[1] - fc_scale * data.offset_y;
+		const auto w = fc_scale * data.width;
+		const auto h = fc_scale * data.height;
+		const auto w_t = data.width;
+		const auto h_t = data.height;
 		const auto x_t = data.x;
 		const auto y_t = data.y;
 
@@ -554,10 +584,10 @@ namespace gnuVG {
 
 //			GNUVG_ERROR("                   (rotated)\n");
 			// push texture coords
-			push_coords(txtc_cache_buffer, x_t    , y_t + h);
-			push_coords(txtc_cache_buffer, x_t + w, y_t + h);
-			push_coords(txtc_cache_buffer, x_t + w, y_t);
-			push_coords(txtc_cache_buffer, x_t    , y_t);
+			push_coords(txtc_cache_buffer, x_t      , y_t + h_t);
+			push_coords(txtc_cache_buffer, x_t + w_t, y_t + h_t);
+			push_coords(txtc_cache_buffer, x_t + w_t, y_t);
+			push_coords(txtc_cache_buffer, x_t      , y_t);
 		} else {
 //			GNUVG_ERROR("---NEW FROM CACHE: ()\n");
 			// push vertice coords
@@ -568,10 +598,10 @@ namespace gnuVG {
 
 //			GNUVG_ERROR("                   ()\n");
 			// push texture coords
-			push_coords(txtc_cache_buffer, x_t    , y_t);
-			push_coords(txtc_cache_buffer, x_t    , y_t + h);
-			push_coords(txtc_cache_buffer, x_t + w, y_t + h);
-			push_coords(txtc_cache_buffer, x_t + w, y_t);
+			push_coords(txtc_cache_buffer, x_t      , y_t);
+			push_coords(txtc_cache_buffer, x_t      , y_t + h_t);
+			push_coords(txtc_cache_buffer, x_t + w_t, y_t + h_t);
+			push_coords(txtc_cache_buffer, x_t + w_t, y_t);
 		}
 
 		// push indices
@@ -615,7 +645,6 @@ namespace gnuVG {
 
 		auto fc_scale = get_fc_scale();
 		GNUVG_ERROR("  --- using fc_scale %d\n", fc_scale);
-		float scale = 1.0 / ((float)fc_scale);
 		auto fc = get_font_cache(fc_scale);
 
 		ctx->select_conversion_matrix(Context::GNUVG_MATRIX_GLYPH_USER_TO_SURFACE);
@@ -642,9 +671,9 @@ namespace gnuVG {
 
 				if(fc->lookup(glyphIndex, cached_result)) {
 					GNUVG_ERROR("   %d was found.", glyphIndex);
-					push_to_cache_buffer(cached_result);
+					push_to_cache_buffer(fc_scale, cached_result);
 					for(auto k = 0; k < 2; ++k) {
-						cord_cache_buffer[k] += scale * adjustment[k];
+						cord_cache_buffer[k] += adjustment[k];
 					}
 				} else {
 					GNUVG_ERROR("   %d NOT found.", glyphIndex);
@@ -662,6 +691,7 @@ namespace gnuVG {
 			}
 		}
 
+		GNUVG_ERROR("Render from font cache.\n");
 		render_cache_buffer(ctx, fc);
 	}
 };

@@ -1090,14 +1090,6 @@ namespace gnuVG {
 							  const GLuint *indices, GLsizei nr_indices,
 							  const GLfloat *texture_matrix_3by3) {
 
-		Matrix *m = &screen_matrix;
-		GLfloat mat[] = {
-			m->a, m->b, 0.0f, m->c,
-			m->d, m->e, 0.0f, m->f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			m->g, m->h, 0.0f, m->i
-		};
-
 		active_shader = Shader::get_shader(
 			Shader::do_flat_color |
 			(do_color_transform ? Shader::do_color_transform : 0)
@@ -1105,7 +1097,7 @@ namespace gnuVG {
 			);
 		active_shader->use_shader();
 		active_shader->set_blending(blend_mode);
-		active_shader->set_matrix(mat);
+		active_shader->set_matrix(conversion_matrix_data);
 		if(do_color_transform)
 			active_shader->set_color_transform(
 				color_transform_scale,
