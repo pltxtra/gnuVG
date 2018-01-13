@@ -833,8 +833,8 @@ namespace gnuVG {
 			glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
 			// first we clear the stencil to zero
-			glClearStencil(0);
 			glStencilMask(0xff);
+			glClearStencil(0);
 			glClear(GL_STENCIL_BUFFER_BIT);
 
 			// then we render the scissor elements
@@ -848,14 +848,14 @@ namespace gnuVG {
 						6 * nr_active_scissors,
 						// colors will be ignored
 						// because of disabled color mask
-						1.0, 0.0, 0.0, 1.0);
+						1.0, 0.0, 0.0, 0.5);
 
 			glStencilFunc(GL_EQUAL, 1, 1);
 			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		} else {
+			glStencilMask(0x0);
+		} else
 			glDisable(GL_STENCIL_TEST);
-		}
 	}
 
 	void Context::recreate_buffers() {
@@ -1306,12 +1306,12 @@ namespace gnuVG {
 		if(mask_is_active) active_shader->set_mask_texture(mask.texture);
 
 		if(scissors_are_active) {
-			glStencilMask(0xff);
+			glEnable(GL_STENCIL_TEST);
+			glStencilMask(0x00);
 			glStencilFunc(GL_EQUAL,
 				      1,
-				      1);
+				      0xff);
 			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-			glEnable(GL_STENCIL_TEST);
 		} else {
 			glStencilFunc(GL_ALWAYS, 1, 1);
 			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
@@ -1546,6 +1546,7 @@ namespace gnuVG {
 		current_framebuffer = framebuffer == nullptr ? (&screen_buffer) : framebuffer;
 
 		glBindFramebuffer(GL_FRAMEBUFFER, current_framebuffer->framebuffer);
+		render_scissors();
 
 		if(current_framebuffer->width ==
 		   buffer_width &&
@@ -1559,7 +1560,6 @@ namespace gnuVG {
 		glViewport(0, 0, buffer_width, buffer_height);
 
 		matrix_resize(buffer_width, buffer_height);
-		render_scissors();
 	}
 
 	auto Context::get_internal_framebuffer(gnuVGFrameBuffer selection) -> const FrameBuffer* {

@@ -39,8 +39,6 @@ namespace gnuVG {
 		ctx->save_current_framebuffer();
 		ctx->render_to_framebuffer(&framebuffer);
 		ctx->trivial_fill_area(0, 0, w, h, 0.0, 0.0, 0.0, 0.0);
-//		ctx->trivial_fill_area(0, 0, w, h, 1.0, 0.0, 0.0, 1.0);
-//		ctx->trivial_fill_area(w / 2, h / 2, w / 2, h / 2, 0.0, 1.0, 0.0, 1.0);
 		ctx->restore_current_framebuffer();
 
 		GLfloat w_f = (float)w;
@@ -169,6 +167,7 @@ namespace gnuVG {
 			return (*fc_p).second;
 		}
 
+		GNUVG_DEBUG("Created font cache for fc_scale %d\n", fc_scale);
 		auto fc = new FontCache(512, 512);
 		font_caches[fc_scale] = fc;
 		return fc;
@@ -332,7 +331,13 @@ namespace gnuVG {
 		vgScale(conversion_factor, conversion_factor);
 
 		auto fc_scale = get_fc_scale();
-		prefill_cache(fc_scale, glyph_indices);
+
+		{
+			VGint scissoring = vgGeti(VG_SCISSORING);
+			vgSeti(VG_SCISSORING, VG_FALSE);
+			prefill_cache(fc_scale, glyph_indices);
+			vgSeti(VG_SCISSORING, scissoring);
+		}
 
 		VGfloat* adj_x = adjustments_x.size() == 0 ? nullptr : adjustments_x.data();
 		vgGetMatrix(mtrx2);
