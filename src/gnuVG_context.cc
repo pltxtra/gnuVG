@@ -1514,8 +1514,14 @@ namespace gnuVG {
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+		if(allowedQuality == VG_IMAGE_QUALITY_BETTER) {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		} else {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, destination->framebuffer);
 
@@ -1683,7 +1689,7 @@ namespace gnuVG {
 		}
 
 		checkGlError("::copy_memory_to_framebuffer - glTexSubImage2D (before)");
-		GNUVG_ERROR("glTexSubImage2D(%d, 0, %d, %d, %d, %d, %d, %d, %p)\n",
+		GNUVG_DEBUG("glTexSubImage2D(%d, 0, %d, %d, %d, %d, %d, %d, %p)\n",
 			    dst->texture, x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE,
 			    memory);
 		glBindTexture(GL_TEXTURE_2D, dst->texture);
