@@ -24,6 +24,8 @@
 #include "gnuVG_object.hh"
 #include "gnuVG_image.hh"
 #include "gnuVG_path.hh"
+#include "gnuVG_paint.hh"
+#include "skyline/SkylineBinPack.h"
 
 #include <libtess2.h>
 #include <vector>
@@ -37,6 +39,58 @@
 #include FT_RENDER_H
 
 namespace gnuVG {
+
+	class FontCache : public rbp::SkylineBinPack {
+	public:
+		Context::FrameBuffer framebuffer;
+
+		struct Rect {
+			int x, y, width, height;
+			int offset_x, offset_y;
+			bool rotated;
+		};
+
+	private:
+		std::map<VGuint, Rect> cache;
+		GLfloat tex_mtrx[9];
+
+	public:
+		FontCache(int w, int h);
+		virtual ~FontCache() {}
+
+		const GLfloat* get_texture_matrix() const {
+			return tex_mtrx;
+		}
+
+		Rect pack(VGuint charcode, int offset_x, int offset_y, int w, int h) {
+			auto r = Insert(w, h, LevelMinWasteFit);
+
+			Rect rr;
+			rr.x = r.x;
+			rr.y = r.y;
+			rr.offset_x = offset_x;
+			rr.offset_y = offset_y;
+			rr.width = r.width;
+			rr.height = r.height;
+
+			rr.rotated = (w != h && rr.width != w) ? true : false;
+
+			if(rr.width != 0 && rr.height != 0)
+				cache[charcode] = rr;
+
+			return rr;
+		}
+
+		bool lookup(VGuint charcode, Rect &result) {
+			auto found = cache.find(charcode);
+			if(found == cache.end())
+				return false;
+
+			result = (*found).second;
+			return true;
+		}
+	};
+
 	class Font : public Object {
 	private:
 		FT_Face freetype_face = 0; /* 0 indicates no FT_Face equivalent */
@@ -60,10 +114,18 @@ namespace gnuVG {
 				       const VGfloat _origin[2], const VGfloat _escapement[2]);
 		};
 
+		std::shared_ptr<Paint> cache_render_paint;
+
 		std::vector<Glyph*> glyphs;
 		std::vector<VGfloat> adjustments_x;
 		std::vector<VGuint> glyph_indices;
+		std::map<int, FontCache *> font_caches;
 		void secure_max_glyphIndex(VGuint glyphIndex);
+
+		int get_fc_scale(); // font cache scalex
+		FontCache* get_font_cache(int fc_scale);
+
+		void prefill_cache(int fc_scale, const std::vector<VGuint> &glyph_indices);
 
 	public:
 		Font(VGint glyphCapacityHint);

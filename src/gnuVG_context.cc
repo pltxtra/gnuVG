@@ -225,13 +225,10 @@ namespace gnuVG {
 	}
 
 	void Context::get_bounding_box(VGfloat *sp_ep) {
-		// we must convert the bbox to screen coordinates
-		auto w = current_framebuffer->width;
-		auto h = current_framebuffer->height;
-		sp_ep[0] = w * (0.5f + bounding_box[0].x / 2.0f);
-		sp_ep[1] = h * (0.5f - bounding_box[1].y / 2.0f);
-		sp_ep[2] = w * (0.5f + bounding_box[1].x / 2.0f);
-		sp_ep[3] = h * (0.5f - bounding_box[0].y / 2.0f);
+		sp_ep[0] = bounding_box[0].x;
+		sp_ep[1] = bounding_box[0].y;
+		sp_ep[2] = bounding_box[1].x;
+		sp_ep[3] = bounding_box[1].y;
 	}
 
 	Point Context::map_point(const Point &p) {
@@ -833,8 +830,8 @@ namespace gnuVG {
 			glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
 			// first we clear the stencil to zero
-			glClearStencil(0);
 			glStencilMask(0xff);
+			glClearStencil(0);
 			glClear(GL_STENCIL_BUFFER_BIT);
 
 			// then we render the scissor elements
@@ -848,14 +845,14 @@ namespace gnuVG {
 						6 * nr_active_scissors,
 						// colors will be ignored
 						// because of disabled color mask
-						1.0, 0.0, 0.0, 1.0);
+						1.0, 0.0, 0.0, 0.5);
 
 			glStencilFunc(GL_EQUAL, 1, 1);
 			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		} else {
+			glStencilMask(0x0);
+		} else
 			glDisable(GL_STENCIL_TEST);
-		}
 	}
 
 	void Context::recreate_buffers() {
@@ -911,8 +908,15 @@ namespace gnuVG {
 						 int gaussian_width,
 						 int gaussian_height,
 						 VGTilingMode tiling_mode) {
-		auto w = (VGfloat)framebuffer->width;
-		auto h = (VGfloat)framebuffer->height;
+		VGfloat w, h;
+
+		if(framebuffer->subset_width >= 0) {
+			w = (VGfloat)(framebuffer->subset_width);
+			h = (VGfloat)(framebuffer->subset_height);
+		} else {
+			w = (VGfloat)(framebuffer->width);
+			h = (VGfloat)(framebuffer->height);
+		}
 
 		// calculate corners of image
 		auto c1_p = matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE].map_point(Point(0.0f, 0.0f));
@@ -1077,6 +1081,32 @@ namespace gnuVG {
 		active_shader->render_elements(indices, indices_count);
 	}
 
+	void Context::render_texture_alpha_triangle_array(const FrameBuffer *fb,
+							  const GLfloat *ver_c_2d, GLint ver_stride_2d,
+							  const GLfloat *tex_c_2d, GLint tex_stride_2d,
+							  const GLuint *indices, GLsizei nr_indices,
+							  const GLfloat *texture_matrix_3by3) {
+
+		active_shader = Shader::get_shader(
+			Shader::do_flat_color |
+			(do_color_transform ? Shader::do_color_transform : 0)
+			| Shader::do_texture_alpha
+			);
+		active_shader->use_shader();
+		active_shader->set_blending(blend_mode);
+		active_shader->set_matrix(conversion_matrix_data);
+		if(do_color_transform)
+			active_shader->set_color_transform(
+				color_transform_scale,
+				color_transform_bias);
+		active_shader->load_2dvertex_array(ver_c_2d, ver_stride_2d);
+		active_shader->load_2dvertex_texture_array(tex_c_2d, tex_stride_2d);
+		active_shader->set_texture(fb->texture);
+		active_shader->set_texture_matrix(texture_matrix_3by3);
+		active_shader->set_color(fill_paint->color.c);
+		active_shader->render_elements(indices, nr_indices);
+	}
+
 	void Context::trivial_fill_area(
 		VGint _x, VGint _y, VGint _width, VGint _height,
 		VGfloat r, VGfloat g, VGfloat b, VGfloat a) {
@@ -1115,6 +1145,8 @@ namespace gnuVG {
 		 * coordinates back to texture space coordinates.
 		 */
 		Matrix temp_a, temp_b;
+		if(fbuf->subset_x >= 0)
+			temp_a.translate(-fbuf->subset_x, -fbuf->subset_y);
 		temp_a.scale(fbuf->width, fbuf->height);
 		temp_b.multiply(final_matrix[GNUVG_MATRIX_IMAGE_USER_TO_SURFACE], temp_a);
 		temp_b.invert();
@@ -1271,12 +1303,12 @@ namespace gnuVG {
 		if(mask_is_active) active_shader->set_mask_texture(mask.texture);
 
 		if(scissors_are_active) {
-			glStencilMask(0xff);
+			glEnable(GL_STENCIL_TEST);
+			glStencilMask(0x00);
 			glStencilFunc(GL_EQUAL,
 				      1,
-				      1);
+				      0xff);
 			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-			glEnable(GL_STENCIL_TEST);
 		} else {
 			glStencilFunc(GL_ALWAYS, 1, 1);
 			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
@@ -1395,7 +1427,7 @@ namespace gnuVG {
 	void Context::calculate_bounding_box(Point* bbox) {
 		Point transformed[4];
 		for(int k = 0; k < 4; k++) {
-			transformed[k] = final_matrix[conversion_matrix].map_point(bbox[k]);
+			transformed[k] = matrix[conversion_matrix].map_point(bbox[k]);
 		}
 
 		int k = 0;
@@ -1479,8 +1511,14 @@ namespace gnuVG {
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+		if(allowedQuality == VG_IMAGE_QUALITY_BETTER) {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		} else {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, destination->framebuffer);
 
@@ -1511,6 +1549,7 @@ namespace gnuVG {
 		current_framebuffer = framebuffer == nullptr ? (&screen_buffer) : framebuffer;
 
 		glBindFramebuffer(GL_FRAMEBUFFER, current_framebuffer->framebuffer);
+		render_scissors();
 
 		if(current_framebuffer->width ==
 		   buffer_width &&
@@ -1524,7 +1563,6 @@ namespace gnuVG {
 		glViewport(0, 0, buffer_width, buffer_height);
 
 		matrix_resize(buffer_width, buffer_height);
-		render_scissors();
 	}
 
 	auto Context::get_internal_framebuffer(gnuVGFrameBuffer selection) -> const FrameBuffer* {
@@ -1570,7 +1608,54 @@ namespace gnuVG {
 						      const FrameBuffer* src,
 						      VGint dx, VGint dy,
 						      VGint sx, VGint sy,
-						      VGint width, VGint height) {
+						      VGint _width, VGint _height,
+						      bool do_blend) {
+		save_current_framebuffer();
+
+		render_to_framebuffer(dst);
+
+		auto caps = Shader::do_pattern;
+		auto shader = Shader::get_shader(caps);
+
+		if(do_blend)
+			shader->set_blending(Shader::blend_src_over);
+		else
+			shader->set_blending(Shader::blend_src);
+
+		shader->set_pattern_texture(src->texture);
+		shader->set_pattern_size(_width, _height);
+		shader->set_wrap_mode(GL_CLAMP_TO_EDGE);
+
+		GLfloat mtrx[] = {
+			1.0, 0.0, 0.0, (GLfloat)(sx - dx),
+			0.0, 1.0, 0.0, (GLfloat)(sy - dy),
+			0.0, 0.0, 1.0,     0.0,
+			0.0, 0.0, 0.0,     1.0
+		};
+
+		shader->set_pattern_matrix(mtrx);
+
+		VGfloat x = (VGfloat)dx;
+		VGfloat y = (VGfloat)dy;
+		VGfloat width = (VGfloat)_width;
+		VGfloat height = (VGfloat)_height;
+
+		GLfloat vertices[] = {
+			x,         y,
+			x + width, y,
+			x + width, y + height,
+			x        , y + height
+		};
+
+		GLuint indices[] = {
+			0, 1, 2,
+			0, 2, 3
+		};
+
+		shader->load_2dvertex_array(vertices, 0);
+		shader->render_elements(indices, 6);
+
+		restore_current_framebuffer();
 	}
 
 	void Context::copy_framebuffer_to_memory(const FrameBuffer* src,
@@ -1601,7 +1686,7 @@ namespace gnuVG {
 		}
 
 		checkGlError("::copy_memory_to_framebuffer - glTexSubImage2D (before)");
-		GNUVG_ERROR("glTexSubImage2D(%d, 0, %d, %d, %d, %d, %d, %d, %p)\n",
+		GNUVG_DEBUG("glTexSubImage2D(%d, 0, %d, %d, %d, %d, %d, %d, %p)\n",
 			    dst->texture, x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE,
 			    memory);
 		glBindTexture(GL_TEXTURE_2D, dst->texture);

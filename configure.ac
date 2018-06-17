@@ -27,5 +27,6 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/libtess2/Makefile
                  src/libtess2/src/Makefile
+                 src/skyline/Makefile
 		 ])
 AC_OUTPUT

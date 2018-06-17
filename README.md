@@ -172,10 +172,12 @@ VG_API_CALL VGImage VG_API_ENTRY gnuvgGetRenderTarget(void) VG_API_EXIT;
 
 // Load a font using libfreetype (currently hardcoded for Android...)
 VGFont gnuvgLoadFont(const char* family, gnuVGFontStyle fontStyle);
+// fontStyle is one or a combination of: gnuVG_NORMAL, gnuVG_ITALIC, gnuVG_BOLD, gnuVG_BOLD_ITALIC
 
 // Render a UTF-8 encoded string
 void gnuvgRenderText(VGFont font, VGfloat size, gnuVGTextAnchor anchor,
                      const char* utf8, VGfloat x_anchor, VGfloat y_anchor);
+// anchor is one of: gnuVG_ANCHOR_START, gnuVG_ANCHOR_MIDDLE, gnuVG_ANCHOR_END
 
 // Reset compounded boundingbox
 void gnuvgResetBoundingBox();

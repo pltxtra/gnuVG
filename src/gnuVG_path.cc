@@ -28,6 +28,24 @@
 #define TESS_POLY_SIZE 3
 
 namespace gnuVG {
+
+	inline void Path::cleanup_path() {
+		simplified.simplify_path(s_segments.data(),
+					 s_coordinates.data(),
+					 s_segments.size());
+		// get top left, bottom right
+		simplified.get_bounding_box(bounding_box);
+
+		// calculate the top right, bottom left
+		auto w = bounding_box[1].x - bounding_box[0].x;
+		auto h = bounding_box[1].y - bounding_box[0].y;
+		bounding_box[2].x = bounding_box[0].x + w;
+		bounding_box[2].y = bounding_box[0].y;
+		bounding_box[3].x = bounding_box[0].x;
+		bounding_box[3].y = bounding_box[0].y + h;
+		path_dirty = false;
+	}
+
 	void Path::vgSetParameterf(VGint paramType, VGfloat value) {
 		switch(paramType) {
 		case VG_PATH_FORMAT:
@@ -198,6 +216,8 @@ namespace gnuVG {
 
 	void Path::vgPathBounds(VGfloat * minX, VGfloat * minY,
 				VGfloat * width, VGfloat * height) {
+		if(path_dirty) cleanup_path();
+
 		*minX	= bounding_box[0].x;
 		*minY	= bounding_box[0].y;
 		*width	= bounding_box[1].x - bounding_box[0].x;
@@ -206,6 +226,8 @@ namespace gnuVG {
 
 	void Path::vgPathTransformedBounds(VGfloat * minX, VGfloat * minY,
 					   VGfloat * width, VGfloat * height) {
+		if(path_dirty) cleanup_path();
+
 		VGfloat sp_ep[4];
 
 		Context::get_current()->transform_bounding_box(bounding_box, sp_ep);
@@ -266,22 +288,7 @@ namespace gnuVG {
 	}
 
 	void Path::vgDrawPath(VGbitfield paintModes) {
-		if(path_dirty) {
-			simplified.simplify_path(s_segments.data(),
-						 s_coordinates.data(),
-						 s_segments.size());
-			// get top left, bottom right
-			simplified.get_bounding_box(bounding_box);
-
-			// calculate the top right, bottom left
-			auto w = bounding_box[1].x - bounding_box[0].x;
-			auto h = bounding_box[1].y - bounding_box[0].y;
-			bounding_box[2].x = bounding_box[0].x + w;
-			bounding_box[2].y = bounding_box[0].y;
-			bounding_box[3].x = bounding_box[0].x;
-			bounding_box[3].y = bounding_box[0].y + h;
-			path_dirty = false;
-		}
+		if(path_dirty) cleanup_path();
 
 		if(paintModes & VG_FILL_PATH) {
 			{

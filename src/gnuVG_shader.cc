@@ -79,8 +79,8 @@ namespace gnuVG {
 		}
 	}
 
-	void Shader::set_matrix(const GLfloat *mtrx) const {
-		glUniformMatrix4fv(Matrix, 1, GL_FALSE, mtrx);
+	void Shader::set_matrix(const GLfloat *m) const {
+		glUniformMatrix4fv(Matrix, 1, GL_FALSE, m);
 	}
 
 	void Shader::set_pre_translation(const GLfloat *ptrans) const {
@@ -169,6 +169,24 @@ namespace gnuVG {
 		glEnableVertexAttribArray(position_handle);
 	}
 
+	void Shader::load_2dvertex_texture_array(const GLfloat *verts, GLint stride) const {
+		ADD_GNUVG_PROFILER_PROBE(SH_load_2dvertex_texture_array);
+
+		glVertexAttribPointer(textureCoord_handle, 2, GL_FLOAT, GL_FALSE,
+				      stride * sizeof(GLfloat), verts);
+		glEnableVertexAttribArray(textureCoord_handle);
+	}
+
+	void Shader::set_texture_matrix(const GLfloat *mtrx) const {
+		glUniformMatrix3fv(textureMatrix_handle, 1, GL_FALSE, mtrx);
+	}
+
+	void Shader::set_texture(GLuint tex) const {
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, tex);
+		glUniform1i(textureSampler_handle, 3);
+	}
+
 	void Shader::render_triangles(GLint first, GLsizei count) const {
 		glDrawArrays(GL_TRIANGLES, first, count);
 	}
@@ -195,13 +213,23 @@ namespace gnuVG {
 
 		if(caps & do_mask)
 			vshad <<
-				"varying vec2 v_textureCoord;\n"
+				"varying vec2 v_maskCoord;\n"
 				;
 
 		if((caps & primary_mode_mask) == do_pattern)
 			vshad <<
 				"uniform mat4 p_projection;\n"
 				"varying vec4 p_textureCoord;\n"
+				;
+
+		if(((caps & primary_mode_mask) == do_texture)
+			||
+		   (caps & do_texture_alpha)
+			)
+			vshad <<
+				"attribute vec2 a_textureCoord;\n"
+				"uniform mat3 u_textureMatrix;\n"
+				"varying vec2 v_textureCoord;\n"
 				;
 
 		if(caps & gradient_spread_mask)
@@ -221,12 +249,22 @@ namespace gnuVG {
 
 		if(caps & do_mask)
 			vshad <<
-				"  v_textureCoord = vec2(gl_Position.x * 0.5 + 0.5, gl_Position.y * 0.5 + 0.5);\n"
+				"  v_maskCoord = vec2(gl_Position.x * 0.5 + 0.5, gl_Position.y * 0.5 + 0.5);\n"
 				;
 
 		if((caps & primary_mode_mask) == do_pattern)
 			vshad <<
 				"  p_textureCoord = p_projection * vec4(gl_Position.xy, 0.0, 1.0);\n"
+				;
+
+		if(((caps & primary_mode_mask) == do_texture)
+		   ||
+		   (caps & do_texture_alpha)
+			)
+			vshad <<
+				"  vec3 atxc = u_textureMatrix * vec3(a_textureCoord, 1.0);\n"
+				"  v_textureCoord = atxc.xy;\n"
+//				"  v_textureCoord = a_textureCoord.xy;\n"
 				;
 
 		if(caps & gradient_spread_mask)
@@ -264,7 +302,7 @@ namespace gnuVG {
 
 		if(caps & do_mask)
 			fshad <<
-				"varying vec2 v_textureCoord;\n"
+				"varying vec2 v_maskCoord;\n"
 				"uniform sampler2D m_texture;\n";
 
 		if(caps & do_color_transform)
@@ -307,6 +345,10 @@ namespace gnuVG {
 				"uniform vec4 v_color;\n"
 				;
 
+		if((primary_mode == do_texture) || (caps & do_texture_alpha))
+			fshad <<
+				"varying vec2 v_textureCoord;\n"
+				"uniform sampler2D u_textureSampler;\n";
 
 		if(do_gauss)
 			fshad
@@ -327,7 +369,12 @@ namespace gnuVG {
 
 		if(caps & do_mask)
 			fshad <<
-				"  vec4 m = texture2D( m_texture, v_textureCoord );\n";
+				"  vec4 m = texture2D( m_texture, v_maskCoord );\n";
+
+		if(caps & do_texture_alpha)
+			fshad <<
+				"  vec4 t = texture2D( u_textureSampler, v_textureCoord.xy );\n";
+
 
 		switch(primary_mode) {
 		case do_flat_color:
@@ -398,10 +445,19 @@ namespace gnuVG {
 					"  vec4 c = texture2D( p_texture, p_textureCoord.xy );\n";
 			}
 			break;
+
+		case do_texture:
+			fshad <<
+				"  vec4 c = texture2D( u_textureSampler, v_textureCoord.xy );\n";
+			break;
 		}
 
 		if(caps & do_mask)
 			fshad << "  c = m.a * c;\n";
+
+		if(caps & do_texture_alpha)
+			fshad << "  c = t.a * c;\n";
+//			fshad << "  c = t;\n";
 
 		if(caps & do_color_transform)
 			fshad <<
@@ -519,6 +575,10 @@ namespace gnuVG {
 					    fragment_shader.c_str());
 
 		position_handle = glGetAttribLocation(program_id, "v_position");
+
+		textureCoord_handle = glGetAttribLocation(program_id, "a_textureCoord");
+		textureMatrix_handle = glGetUniformLocation(program_id, "u_textureMatrix");
+		textureSampler_handle = glGetUniformLocation(program_id, "u_textureSampler");
 
 		ColorHandle = glGetUniformLocation(program_id, "v_color");
 		Matrix = glGetUniformLocation(program_id, "modelview_projection");

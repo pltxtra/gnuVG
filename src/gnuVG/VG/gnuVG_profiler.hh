@@ -41,6 +41,7 @@
 #define GNUVG_DECLARE_PROFILER_PROBE(NAME) gnuVG::ProfileProbe NAME##_probe(#NAME)
 #define GNUVG_APPLY_PROFILER_GUARD(NAME) gnuVG::ProbeGuard NAME##_guard(&NAME##_probe)
 #define GNUVG_GET_PROFILER_TIME(NAME) gnuVG::ProfileProbe::get(#NAME)->get_total_time_in_seconds()
+#define GNUVG_GET_PROFILER_ROLLING_AVG_TIME(NAME) gnuVG::ProfileProbe::get(#NAME)->get_rolling_avg_time_in_seconds()
 #define GNUVG_GET_PROFILER_COUNT(NAME) gnuVG::ProfileProbe::get(#NAME)->get_count()
 
 #define GNUVG_READ_PROFILER_COUNTER(NAME) gnuVG::ProfilerCounter::read_and_clear(#NAME)
@@ -99,6 +100,9 @@ namespace gnuVG {
 		std::string name;
 		struct timespec total_time;
 		struct timespec start_time;
+
+		double rolling_avg_time = 0.0;
+
 		int count = 0;
 
 	public:
@@ -143,11 +147,22 @@ namespace gnuVG {
 				total_time.tv_sec  += 1;
 				total_time.tv_nsec -= 1000000000;
 			}
+
+			double latest_time =
+				(double)stop_time.tv_sec +
+				(double)stop_time.tv_nsec / 1000000000.0;
+
+
+			rolling_avg_time = (0.95 * rolling_avg_time) + (0.05 * latest_time);
 		}
 
 		double get_total_time_in_seconds() {
 			return (double)total_time.tv_sec +
 				(double)total_time.tv_nsec / 1000000000.0;
+		}
+
+		double get_rolling_avg_time_in_seconds() {
+			return rolling_avg_time;
 		}
 
 		int get_count() {

@@ -42,6 +42,7 @@ namespace gnuVG {
 		struct FrameBuffer {
 			GLuint framebuffer = 0, texture = 0, stencil = 0;
 			VGint width = 128, height = 128;
+			VGint subset_x = -1, subset_y = -1, subset_width = -1, subset_height = -1;
 		};
 
 		enum gnuVGFrameBuffer {
@@ -164,6 +165,11 @@ namespace gnuVG {
 		void trivial_render_elements(
 			GLfloat *vertices, GLuint *indices, GLsizei indices_count,
 			VGfloat r, VGfloat g, VGfloat b, VGfloat a);
+		void render_texture_alpha_triangle_array(const FrameBuffer *fb,
+							 const GLfloat *ver_c_2d, GLint ver_stride_2d,
+							 const GLfloat *tex_c_2d, GLint tex_stride_2d,
+							 const GLuint *indices, GLsizei nr_indices,
+							 const GLfloat *texture_matrix_3by3);
 		void trivial_fill_area(
 			VGint x, VGint y, VGint width, VGint height,
 			VGfloat r, VGfloat g, VGfloat b, VGfloat a);
@@ -203,7 +209,8 @@ namespace gnuVG {
 						     const FrameBuffer* src,
 						     VGint dx, VGint dy,
 						     VGint sx, VGint sy,
-						     VGint width, VGint height);
+						     VGint width, VGint height,
+						     bool do_blend = false);
 		void copy_framebuffer_to_memory(const FrameBuffer* src,
 						void *memory, VGint stride,
 						VGImageFormat fmt,
