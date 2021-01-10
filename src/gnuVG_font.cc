@@ -445,8 +445,9 @@ namespace gnuVG {
 
 		auto glyph = glyphs.data()[glyphIndex];
 		Context::get_current()->use_glyph_origin_as_pre_translation(glyph->origin);
-		if(glyph->path != VG_INVALID_HANDLE)
+		if(glyph->path != VG_INVALID_HANDLE) {
 			glyph->path->vgDrawPath(paintModes);
+		}
 		Context::get_current()->adjust_glyph_origin(glyph->escapement);
 	}
 

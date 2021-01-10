@@ -27,6 +27,7 @@
 #else
 
 #include <stdio.h>
+#include <stdlib.h>
 #define GNUVG_ERROR(...)  printf(__VA_ARGS__)
 
 #endif

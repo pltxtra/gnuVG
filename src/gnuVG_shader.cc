@@ -555,7 +555,7 @@ namespace gnuVG {
 				k += 1;
 			}
 			bfr.push_back('\0');
-			GNUVG_ERROR("%04d: %s\n", l, bfr.data());
+			GNUVG_ERROR("%lx: %s\n", l, bfr.data());
 			if(content[k] == '\n') k += 1;
 			l++;
 		}

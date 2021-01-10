@@ -21,6 +21,7 @@
 #define __GNUVG_MEMCLASSES_HH
 
 #include <stdlib.h>
+#include <string.h>
 #include <map>
 #include <vector>
 

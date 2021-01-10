@@ -44,7 +44,7 @@ namespace gnuVG {
 		struct StrokeData {
 			const VGfloat *vertices;
 			const unsigned int *indices;
-			unsigned int nr_vertices, nr_indices;
+			uintptr_t nr_vertices, nr_indices;
 		};
 
 		GvgVector<Segment> segments;

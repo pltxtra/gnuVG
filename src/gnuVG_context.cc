@@ -19,6 +19,7 @@
 
 #include <limits>
 #include <VG/openvg.h>
+#include <string.h>
 
 #include "gnuVG_context.hh"
 #include "gnuVG_config.hh"
@@ -1527,6 +1528,10 @@ namespace gnuVG {
 				       destination->texture, 0 );
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT,
 				GL_RENDERBUFFER, destination->stencil);
+
+		// clear it completely
+		glClearColor(0, 0, 0, 0.0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, current_framebuffer->framebuffer);
 

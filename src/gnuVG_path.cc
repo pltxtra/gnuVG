@@ -25,6 +25,8 @@
 #define ENABLE_GNUVG_PROFILER
 #include <VG/gnuVG_profiler.hh>
 
+#include <string.h>
+
 #define TESS_POLY_SIZE 3
 
 namespace gnuVG {

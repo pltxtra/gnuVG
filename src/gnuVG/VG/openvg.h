@@ -54,6 +54,7 @@
 #define _OPENVG_H
 
 #include <VG/vgplatform.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,7 +76,7 @@ extern "C" {
 #define VG_MAX_ENUM 0x7FFFFFFF
 #endif
 
-typedef VGuint VGHandle;
+typedef uintptr_t VGHandle;
 
 typedef VGHandle VGPath;
 typedef VGHandle VGImage;
