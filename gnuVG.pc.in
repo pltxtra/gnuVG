@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: @PACKAGE_NAME@
+Description: gnuVG is a OpenVG implementation on top of OpenGLES
+Version: @PACKAGE_VERSION@
+Libs: -L${libdir} -lgnuVG
+Cflags: -I${includedir}/gnuVG

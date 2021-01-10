@@ -2,7 +2,7 @@ SUBDIRS = libtess2 skyline
 
 lib_LTLIBRARIES = libgnuVG.la
 
-libgnuVG_la_CPPFLAGS = -std=c++11 -I $(srcdir)/gnuVG -I $(srcdir)/libtess2/include -I ${prefix}/include/freetype2 -Wall -Werror -Wfatal-errors
+libgnuVG_la_CPPFLAGS = -std=c++11 -I $(srcdir)/gnuVG -I $(srcdir)/libtess2/include $(freetype2_CFLAGS) -Wall -Werror -Wfatal-errors
 
 libgnuVG_la_SOURCES = \
 gnuVG_profiler.cc \
@@ -25,6 +25,6 @@ gnuVG_termination_handler.cc \
 gnuVG_filter.cc \
 gnuVG_gaussianblur.hh
 
-libgnuVG_la_LDFLAGS =  -L${prefix}/lib ./skyline/libskyline.la ./libtess2/src/libtess2.la -lGLESv2 -lfreetype
+libgnuVG_la_LDFLAGS =  -L${prefix}/lib ./skyline/libskyline.la ./libtess2/src/libtess2.la -lGLESv2 $(freetype2_LIBS)
 
 nobase_include_HEADERS = gnuVG/VG/openvg.h gnuVG/VG/gvgextensions.h gnuVG/VG/vgplatform.h gnuVG/VG/vgu.h gnuVG/VG/gnuVG_profiler.hh

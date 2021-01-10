@@ -8,13 +8,15 @@ AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE
 LT_INIT
 AC_CONFIG_MACRO_DIR([m4])
+PKG_INSTALLDIR
+PKG_PROG_PKG_CONFIG
 
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
 
 # Checks for libraries.
-AC_CHECK_FT2
+PKG_CHECK_MODULES([freetype2], [freetype2])
 
 # Checks for header files.
 
@@ -24,6 +26,7 @@ AC_CHECK_HEADER_STDBOOL
 # Checks for library functions.
 
 AC_CONFIG_FILES([Makefile
+                 gnuVG.pc
                  src/Makefile
                  src/libtess2/Makefile
                  src/libtess2/src/Makefile
