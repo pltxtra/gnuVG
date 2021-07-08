@@ -26,6 +26,8 @@
  * detect that the object is not in use and remove it...
  */
 
+#if 0
+
 #include <cxxabi.h>
 #include <stdlib.h>
 #include "gnuVG_error.hh"
@@ -47,3 +49,5 @@ struct AutoSetTerminationHandler {
 };
 
 AutoSetTerminationHandler force_run_at_init;
+
+#endif

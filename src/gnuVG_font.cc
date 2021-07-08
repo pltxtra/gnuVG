@@ -106,7 +106,7 @@ namespace gnuVG {
 
 	/* gnuVG extensions API */
 	bool Font::gnuVG_load_font(const char* family, gnuVGFontStyle fontStyle) {
-		std::string path = "/system/fonts/";
+		std::string path = "/home/pltxtra/Android/Sdk/platforms/android-27/data/fonts/"; //"/system/fonts/";
 		path += family;
 		path += "-";
 		switch(fontStyle) {
@@ -125,8 +125,11 @@ namespace gnuVG {
 		}
 
 		if(get_handle() !=
-		   fontLoader_load_font(get_handle(), &freetype_face, path.c_str(), VG_FALSE))
+		   fontLoader_load_font(get_handle(), &freetype_face, path.c_str(), VG_FALSE)) {
+			printf("dang ... couldn't load %s\n", path.c_str());
 			return false;
+		}
+			printf("Loaded %s\n", path.c_str());
 		freetype_face_set = true;
 		return true;
 	}
@@ -231,7 +234,7 @@ namespace gnuVG {
 				auto r = fc->pack(gi, g->origin[0], g->origin[1], width + 4.0, height + 4.0);
 
 				if(r.width == 0) {
-					GNUVG_ERROR("Couldn't fit to cache.\n");
+					GNUVG_ERROR("Couldn't fit to cache. (%f, %f, %f, %f)\n", g->origin[0], g->origin[1], width + 4.0, height + 4.0);
 					continue; // couldn't fit
 				}
 
@@ -285,7 +288,6 @@ namespace gnuVG {
 			auto c = utf8[n];
 			/* convert character code to glyph index */
 			auto glyph_index = FT_Get_Char_Index(freetype_face, c);
-
 			auto glyph = glyphs[c];
 			if(glyph) {
 				ADD_GNUVG_PROFILER_PROBE(process_glyph);

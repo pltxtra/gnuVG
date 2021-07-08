@@ -24,10 +24,10 @@
 #include "gnuVG_debug.hh"
 
 // Max recursion depth for cubic subdivision
-#define MAX_RENDER_SUBDIVISION 8
+#define MAX_RENDER_SUBDIVISION 16
 
 // Define pixel size factor for subdivision limit
-#define PIXEL_SIZE_FACTOR 1.0f
+#define PIXEL_SIZE_FACTOR 0.125f
 
 namespace gnuVG {
 	/*********************************************************

@@ -21,7 +21,7 @@
 #include "gnuVG_fontloader.hh"
 #include "gnuVG_font.hh"
 
-//#define __DO_GNUVG_DEBUG
+#define __DO_GNUVG_DEBUG
 #include "gnuVG_debug.hh"
 
 #ifdef __cplusplus
@@ -117,9 +117,12 @@ extern "C" {
 
 		GNUVG_DEBUG("d=\"");
 		if(result != VG_INVALID_HANDLE) {
+			GNUVG_DEBUG("Created path for glyph.. %lx\n", result);
 			(void)FT_Outline_Decompose(outline,
 						   &fot_funcs,
 						   &result);
+		} else {
+			GNUVG_ERROR("Failed to create path for glyph.\n");
 		}
 		GNUVG_DEBUG("\"\n");
 
@@ -201,6 +204,7 @@ extern "C" {
 		const char *font_path,
 		VGboolean vertical) {
 		FT_Error error = FT_Err_Ok;
+		printf("Tjooopza\n");
 
 		if(vg_font) {
 			error = FT_New_Face(m_library,
@@ -227,9 +231,15 @@ extern "C" {
 						charcode = FT_Get_Next_Char(*m_face, charcode, &gindex );
 					}
 					return vg_font;
+				} else {
+					printf("2 -- error\n");
 				}
 				FT_Done_Face(*m_face);
+			} else {
+				printf("1 -- error\n");
 			}
+		} else {
+			printf("0 -- no vg_font...\n");
 		}
 		return VG_INVALID_HANDLE;
 	}
